@@ -2,80 +2,75 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Culinária Sob Pressão PRO</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Pânico na Cozinha</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <style>
-        body { touch-action: manipulation; font-family: system-ui, sans-serif; overflow: hidden; background: #09090b; }
-        .kitchen-gradient { background: radial-gradient(circle at center, #18181b 0%, #000 100%); }
-        .counter-top { background: #3f3f46; border-top: 4px solid #71717a; position: relative; }
-        .flying-item { 
-            position: absolute; left: 50%; bottom: 20px; font-size: 2.5rem;
-            pointer-events: none; will-change: transform, opacity;
-            animation: flyUp 0.4s ease-out forwards;
-        }
-        @keyframes flyUp {
-            0% { transform: translate(-50%, 0) scale(1); opacity: 1; }
-            100% { transform: translate(-50%, -180px) scale(0.5); opacity: 0; }
-        }
-        #timer-fill { transition: width 0.1s linear; }
+        :root { --safe-top: env(safe-area-inset-top); --safe-bottom: env(safe-area-inset-bottom); }
+        body { touch-action: manipulation; font-family: system-ui, sans-serif; overflow: hidden; background: #000; height: 100vh; }
+        .kitchen-gradient { background: radial-gradient(circle at center, #18181b 0%, #000 100%); padding-top: var(--safe-top); padding-bottom: var(--safe-bottom); }
+        .counter-top { background: #3f3f46; border-top: 4px solid #71717a; border-bottom: 6px solid #18181b; position: relative; width: 100%; height: 80px; }
+        .flying-item { position: absolute; left: 50%; bottom: 10px; font-size: 1.8rem; pointer-events: none; will-change: transform, opacity; animation: flyUp 0.4s ease-out forwards; }
+        @keyframes flyUp { 0% { transform: translate(-50%, 0) scale(1); opacity: 1; } 100% { transform: translate(-50%, -120px) scale(0.5); opacity: 0; } }
+        .emoji-text { font-size: 1.6rem; line-height: 1; }
+        button { -webkit-tap-highlight-color: transparent; outline: none !important; transition: transform 0.1s; }
+        button:active { transform: scale(1.3); }
     </style>
 </head>
-<body class="kitchen-gradient h-screen text-zinc-100 select-none">
+<body class="kitchen-gradient text-zinc-100 select-none flex flex-col h-full">
 
     <div id="setup" class="fixed inset-0 z-50 flex flex-col items-center justify-center bg-zinc-950 p-6 text-center">
-        <h1 class="text-4xl font-black text-orange-500 mb-2 italic tracking-tighter">KITCHEN PANIC</h1>
-        <div id="status" class="mb-6 text-orange-400 font-mono text-xs uppercase tracking-widest">Aguardando Conexão...</div>
-        
+        <h1 class="text-4xl font-black text-orange-500 mb-2 italic tracking-tighter">Pânico na Cozinha</h1>
+        <p id="status" class="text-orange-400 font-mono text-xs uppercase mb-8">Loading...</p>
         <div class="w-full max-w-sm space-y-4">
             <div class="bg-zinc-900 p-5 rounded-2xl border border-zinc-800 shadow-2xl">
-                <span class="text-[10px] block mb-2 font-bold text-zinc-500 uppercase italic">ID da sua Cozinha</span>
+                <span class="text-[10px] block mb-1 font-bold text-zinc-500 uppercase">Seu ID</span>
                 <div id="my-id" class="text-lg font-mono font-bold text-blue-400 mb-4 break-all">...</div>
-                <button id="btn-copy" class="w-full bg-zinc-800 py-3 rounded-xl font-bold border border-zinc-700 active:bg-zinc-700">COPIAR ID</button>
+                <button onclick="copyID()" class="w-full bg-zinc-800 py-3 rounded-xl font-bold border border-zinc-700 active:bg-zinc-700">Copiar</button>
             </div>
-            <input id="join-id" type="text" placeholder="ID do Amigo" class="w-full p-4 bg-zinc-900 rounded-2xl border border-zinc-800 text-center outline-none focus:border-orange-500">
-            <button id="btn-connect" class="w-full bg-orange-600 py-4 rounded-2xl font-black text-lg active:scale-95 transition-all">CONECTAR</button>
+            <input id="join-id" type="text" placeholder="ID do Parceiro" class="w-full p-4 bg-zinc-900 rounded-2xl border border-zinc-800 text-center outline-none focus:border-orange-500 text-white">
+            <button id="btn-connect" class="w-full bg-orange-600 py-4 rounded-2xl font-black text-lg active:scale-95 transition-all">Entrar</button>
         </div>
     </div>
 
-    <div id="game" class="hidden h-screen flex flex-col max-w-md mx-auto relative">
-        <div class="h-[12%] flex items-center justify-between px-6 pt-2">
-            <div>
-                <span class="text-[10px] text-zinc-500 font-bold uppercase block">Score</span>
-                <div id="score" class="text-3xl font-black text-orange-500 tracking-tighter">0</div>
+    <div id="game" class="hidden flex-1 flex flex-col max-w-md mx-auto w-full relative">
+        <div class="px-6 py-4 flex items-center justify-between shrink-0 bg-black/40">
+            <div class="w-1/3">
+                <span class="text-[9px] text-zinc-500 font-bold uppercase block italic">Caixa</span>
+                <div id="score" class="text-xl font-black tracking-tighter">R$ 0</div>
             </div>
-            <div class="flex flex-col items-end w-1/2">
-                <span class="text-[10px] text-zinc-500 font-bold uppercase mb-1">Tempo Limite</span>
-                <div class="w-full h-3 bg-zinc-900 rounded-full overflow-hidden border border-zinc-800">
-                    <div id="timer-fill" class="h-full bg-green-500 w-full"></div>
-                </div>
+            <div class="w-1/3 text-center">
+                <div id="day-display" class="text-orange-500 font-black text-lg italic uppercase leading-none">DIA 1</div>
+                <div id="meta-display" class="text-[9px] text-zinc-400 font-bold uppercase">META: 0/15</div>
             </div>
-        </div>
-
-        <div class="h-[20%] flex flex-col items-center justify-center relative px-4 text-center">
-            <div class="bg-zinc-800/50 backdrop-blur-sm w-full py-4 rounded-3xl border border-white/5 flex flex-col items-center shadow-xl">
-                <div class="text-[10px] font-black text-orange-500 uppercase tracking-widest mb-1">Receita do Cliente</div>
-                <div id="order-box" class="text-3xl tracking-tighter drop-shadow-lg"></div>
+            <div class="w-1/3 text-right">
+                <span class="text-[9px] text-zinc-500 font-bold uppercase block">Paciência</span>
+                <div id="timer-text" class="text-xl font-black">10.0s</div>
             </div>
         </div>
 
-        <div class="flex-1 flex flex-col items-center justify-center relative">
-            <div class="w-[85%] aspect-square counter-top rounded-[2.5rem] shadow-2xl flex flex-col items-center justify-center border-b-8 border-zinc-900">
-                <div id="plate" class="text-4xl flex gap-1 flex-wrap justify-center items-center p-4"></div>
+        <div class="px-4 py-4 flex justify-center shrink-0">
+            <div class="bg-zinc-800/30 backdrop-blur-md w-full py-3 rounded-2xl border border-white/5 flex flex-col items-center">
+                <div id="order-box" class="emoji-text tracking-tight font-bold"></div>
+            </div>
+        </div>
+
+        <div class="px-6 shrink-0">
+            <div class="counter-top rounded-2xl flex items-center justify-center">
+                <div id="plate" class="emoji-text flex gap-0.5 justify-center items-center"></div>
                 <div id="anim-layer" class="absolute inset-0 pointer-events-none"></div>
             </div>
         </div>
 
-        <div class="h-[38%] p-4 flex flex-col gap-3 bg-zinc-950/90 rounded-t-[2.5rem] border-t border-white/10">
-            <div id="role-tag" class="text-center text-[10px] font-black text-zinc-500 uppercase tracking-widest">Iniciando...</div>
-            <div id="hud-buttons" class="grid grid-cols-3 gap-2 h-20"></div>
-            <div id="special-action" class="h-16"></div>
+        <div class="flex-1 flex flex-col items-center justify-center px-4">
+            <div id="role-tag" class="text-[8px] font-black text-zinc-600 uppercase tracking-widest mb-4">Cozinheiro</div>
+            <div id="hud-buttons" class="flex flex-wrap items-center justify-center gap-4 text-4xl"></div>
         </div>
     </div>
 
     <script>
-        let peer = new Peer();
+        const peer = new Peer();
         let conn = null;
         let role = '';
         
@@ -84,25 +79,28 @@
             plate: [],
             order: [],
             orderStartTime: 0,
-            duration: 10000,
+            day: 1,
+            dayStartTime: 0,
+            ordersCompleted: 0,
             active: false
         };
 
-        // Layout de Controles conforme pedido
-        const CONTROLS = {
-            HOST: { items: ['🍞', '🔥'], action: '🥪' },
-            GUEST: { items: ['🧀', '🥚', '🍅', '🧅', '🥬'], action: null }
+        const ITEMS = {
+            HOST: ['🍞', '🔥', '🥤'],
+            GUEST: ['🧀', '🥩', '🍅', '🧅', '🥬']
         };
 
         peer.on('open', id => document.getElementById('my-id').innerText = id);
 
-        document.getElementById('btn-copy').onclick = () => {
+        function copyID() {
             navigator.clipboard.writeText(document.getElementById('my-id').innerText);
-            alert("Copiado!");
-        };
+            alert("ID Copiado!");
+        }
 
         document.getElementById('btn-connect').onclick = () => {
-            conn = peer.connect(document.getElementById('join-id').value, { reliable: true });
+            const id = document.getElementById('join-id').value;
+            if(!id) return;
+            conn = peer.connect(id, { reliable: true });
             role = 'GUEST';
             setupConnection();
         };
@@ -118,105 +116,100 @@
                 document.getElementById('setup').classList.add('hidden');
                 document.getElementById('game').classList.remove('hidden');
                 renderHUD();
-                if(role === 'HOST') startNewRound();
+                if(role === 'HOST') {
+                    STATE.dayStartTime = Date.now();
+                    startNewOrder();
+                }
                 requestAnimationFrame(gameLoop);
             });
 
             conn.on('data', data => {
                 if (role === 'GUEST' && data.type === 'SYNC') {
                     Object.assign(STATE, data.state);
-                    renderUI();
+                    updateUI();
                 }
                 if (role === 'HOST' && data.type === 'INPUT') handleInput(data.item);
-                if (role === 'HOST' && data.type === 'TRY_SERVE') checkFinalServe();
+                if (data.type === 'OVER') { alert(data.msg); location.reload(); }
             });
         }
 
         function renderHUD() {
             const container = document.getElementById('hud-buttons');
-            const special = document.getElementById('special-action');
-            const myConfig = CONTROLS[role];
-            
             container.innerHTML = '';
-            myConfig.items.forEach(emoji => {
-                const btn = createBtn(emoji, "bg-zinc-800 text-3xl", () => {
+            ITEMS[role].forEach(emoji => {
+                const btn = document.createElement('button');
+                btn.innerHTML = emoji;
+                btn.className = "p-1";
+                btn.onpointerdown = (e) => {
+                    e.preventDefault();
                     if(role === 'GUEST') conn.send({ type: 'INPUT', item: emoji });
                     else handleInput(emoji);
-                    showFlyAnim(emoji);
-                });
+                    showFly(emoji);
+                };
                 container.appendChild(btn);
             });
-
-            if (myConfig.action) {
-                const serveBtn = createBtn(myConfig.action + " ENTREGAR", "bg-green-600 text-xl font-black w-full", () => {
-                    checkFinalServe();
-                });
-                special.appendChild(serveBtn);
-            }
-            document.getElementById('role-tag').innerText = role === 'HOST' ? 'Chef Host: Massas e Entrega' : 'Chef Guest: Recheios';
-        }
-
-        function createBtn(text, cls, cb) {
-            const b = document.createElement('button');
-            b.className = `${cls} rounded-2xl shadow-[0_4px_0_0_#000] active:translate-y-1 active:shadow-none transition-all border border-white/5`;
-            b.innerText = text;
-            b.addEventListener('pointerdown', (e) => { e.preventDefault(); cb(); });
-            return b;
-        }
-
-        function startNewRound() {
-            const pool = ['🧀', '🥚', '🍅', '🧅', '🥬'];
-            let newOrder = ['🍞'];
-            const extraSize = Math.floor(Math.random() * 3) + 1; // 1 a 3 ingredientes de recheio
-            for(let i=0; i<extraSize; i++) newOrder.push(pool[Math.floor(Math.random()*pool.length)]);
-            newOrder.push('🍞'); // Pão no final
-            
-            STATE.order = newOrder;
-            STATE.plate = [];
-            STATE.orderStartTime = Date.now();
-            STATE.active = true;
-            broadcast();
-            renderUI();
+            document.getElementById('role-tag').innerText = role === 'HOST' ? 'Chef Bancada A' : 'Chef Bancada B';
         }
 
         function handleInput(item) {
             if(!STATE.active) return;
             STATE.plate.push(item);
-            
-            // Validação instantânea de erro se exceder tamanho ou se for pão no meio errado
-            if (STATE.plate.length > STATE.order.length) {
-                fail("Ingredientes demais!");
-            } else {
-                broadcast();
-                renderUI();
-            }
-        }
-
-        function checkFinalServe() {
-            if(!STATE.active) return;
-            const isCorrect = JSON.stringify(STATE.plate) === JSON.stringify(STATE.order);
-            if (isCorrect) {
+            const plateStr = STATE.plate.join('');
+            const orderStr = STATE.order.join('');
+            if(plateStr === orderStr) {
                 STATE.score += 5;
-                STATE.active = false;
-                renderUI();
-                setTimeout(startNewRound, 600);
-            } else {
-                fail("Receita incorreta!");
+                STATE.ordersCompleted++;
+                nextStep();
+            } else if (STATE.plate.length >= STATE.order.length) {
+                STATE.score -= 5;
+                nextStep();
             }
+            checkStatus();
+            sync();
+            updateUI();
         }
 
-        function fail(reason) {
-            STATE.score = Math.max(0, STATE.score - 5);
+        function checkStatus() {
+            if(STATE.score <= -100) gameOver("FALÊNCIA! O restaurante acumulou muitas dívidas.");
+        }
+
+        function startNewOrder() {
+            const pool = ['🧀', '🥩', '🍅', '🧅', '🥬'];
+            const rand = Math.random();
+            let num = rand < 0.25 ? 2 : (rand < 0.50 ? 3 : 5);
+            let newOrder = ['🍞'];
+            for(let i=0; i<num; i++) newOrder.push(pool[Math.floor(Math.random()*pool.length)]);
+            newOrder.push('🍞');
+            if(Math.random() < 0.25) newOrder.push('🥤');
+            STATE.order = newOrder;
+            STATE.plate = [];
+            STATE.orderStartTime = Date.now();
+            STATE.active = true;
+            sync();
+            updateUI();
+        }
+
+        function nextStep() {
             STATE.active = false;
-            renderUI();
-            setTimeout(startNewRound, 600);
+            sync();
+            setTimeout(() => { if(STATE.score > -100) startNewOrder(); }, 800);
         }
 
-        function broadcast() {
+        function sync() {
             if(role === 'HOST' && conn.open) conn.send({ type: 'SYNC', state: STATE });
         }
 
-        function showFlyAnim(emoji) {
+        function updateUI() {
+            const scoreEl = document.getElementById('score');
+            scoreEl.innerText = `R$ ${STATE.score}`;
+            scoreEl.className = `text-xl font-black tracking-tighter ${STATE.score < 0 ? 'text-red-500' : 'text-green-500'}`;
+            document.getElementById('order-box').innerText = STATE.order.join('');
+            document.getElementById('plate').innerText = STATE.plate.join('');
+            document.getElementById('day-display').innerText = `DIA ${STATE.day}`;
+            document.getElementById('meta-display').innerText = `META: ${STATE.ordersCompleted}/15`;
+        }
+
+        function showFly(emoji) {
             const el = document.createElement('div');
             el.className = 'flying-item';
             el.innerText = emoji;
@@ -224,24 +217,36 @@
             setTimeout(() => el.remove(), 400);
         }
 
-        function renderUI() {
-            document.getElementById('score').innerText = STATE.score;
-            document.getElementById('order-box').innerText = STATE.order.join(' ');
-            document.getElementById('plate').innerText = STATE.plate.join(' ');
+        function gameOver(msg) {
+            if(role === 'HOST') conn.send({ type: 'OVER', msg: msg });
+            alert(msg);
+            location.reload();
         }
 
         function gameLoop() {
+            const now = Date.now();
             if (STATE.active) {
-                const elapsed = Date.now() - STATE.orderStartTime;
-                const pct = Math.max(0, 100 - (elapsed / STATE.duration * 100));
-                const bar = document.getElementById('timer-fill');
-                bar.style.width = pct + '%';
-                
-                if(pct < 25) bar.className = "h-full bg-red-600 w-full";
-                else if(pct < 50) bar.className = "h-full bg-yellow-500 w-full";
-                else bar.className = "h-full bg-green-500 w-full";
-
-                if (elapsed >= STATE.duration && role === 'HOST') fail("Tempo esgotado!");
+                const elapsed = now - STATE.orderStartTime;
+                const remaining = Math.max(0, 10000 - elapsed);
+                document.getElementById('timer-text').innerText = (remaining / 1000).toFixed(1) + 's';
+                document.getElementById('timer-text').style.color = remaining < 3000 ? '#ef4444' : '#fff';
+                if (remaining <= 0 && role === 'HOST') {
+                    STATE.score -= 5;
+                    checkStatus();
+                    nextStep();
+                }
+            }
+            if (role === 'HOST' && STATE.active) {
+                const dayTime = now - STATE.dayStartTime;
+                if (dayTime >= 180000) {
+                    if (STATE.ordersCompleted < 15) gameOver(`DERROTA! Meta de 15 pedidos não batida no Dia ${STATE.day}.`);
+                    else {
+                        STATE.day++;
+                        STATE.ordersCompleted = 0;
+                        STATE.dayStartTime = now;
+                        sync();
+                    }
+                }
             }
             requestAnimationFrame(gameLoop);
         }
