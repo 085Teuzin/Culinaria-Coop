@@ -22,12 +22,12 @@
 
     <div id="setup" class="fixed inset-0 z-50 flex flex-col items-center justify-center bg-zinc-950 p-6 text-center">
         <h1 class="text-4xl font-black text-orange-500 mb-2 italic tracking-tighter">Pânico na Cozinha</h1>
-        <p id="status" class="text-orange-400 font-mono text-xs uppercase mb-8">Loading...</p>
+        <p id="status" class="text-orange-400 font-mono text-xs uppercase mb-8">Aguardando Peer...</p>
         <div class="w-full max-w-sm space-y-4">
             <div class="bg-zinc-900 p-5 rounded-2xl border border-zinc-800 shadow-2xl">
                 <span class="text-[10px] block mb-1 font-bold text-zinc-500 uppercase">Seu ID</span>
                 <div id="my-id" class="text-lg font-mono font-bold text-blue-400 mb-4 break-all">...</div>
-                <button onclick="copyID()" class="w-full bg-zinc-800 py-3 rounded-xl font-bold border border-zinc-700 active:bg-zinc-700">Copiar</button>
+                <button onclick="copyID()" class="w-full bg-zinc-800 py-3 rounded-xl font-bold border border-zinc-700 active:bg-zinc-700">Copiar Link</button>
             </div>
             <input id="join-id" type="text" placeholder="ID do Parceiro" class="w-full p-4 bg-zinc-900 rounded-2xl border border-zinc-800 text-center outline-none focus:border-orange-500 text-white">
             <button id="btn-connect" class="w-full bg-orange-600 py-4 rounded-2xl font-black text-lg active:scale-95 transition-all">Entrar</button>
@@ -90,19 +90,37 @@
             GUEST: ['🧀', '🥩', '🍅', '🧅', '🥬']
         };
 
-        peer.on('open', id => document.getElementById('my-id').innerText = id);
+        peer.on('open', id => {
+            document.getElementById('my-id').innerText = id;
+            document.getElementById('status').innerText = "Pronto para cozinhar";
+            
+            const urlParams = new URLSearchParams(window.location.search);
+            const inviteId = urlParams.get('join');
+            if (inviteId) {
+                document.getElementById('join-id').value = inviteId;
+                document.getElementById('status').innerText = "Conectando ao parceiro...";
+                connectToPeer(inviteId);
+                window.history.replaceState({}, document.title, window.location.pathname);
+            }
+        });
 
         function copyID() {
-            navigator.clipboard.writeText(document.getElementById('my-id').innerText);
-            alert("ID Copiado!");
+            const myId = document.getElementById('my-id').innerText;
+            const shareLink = `https://085teuzin.github.io/Culinaria/?join=${myId}`;
+            navigator.clipboard.writeText(shareLink).then(() => {
+                alert("Link de convite copiado!");
+            });
         }
 
-        document.getElementById('btn-connect').onclick = () => {
-            const id = document.getElementById('join-id').value;
+        function connectToPeer(id) {
             if(!id) return;
             conn = peer.connect(id, { reliable: true });
             role = 'GUEST';
             setupConnection();
+        }
+
+        document.getElementById('btn-connect').onclick = () => {
+            connectToPeer(document.getElementById('join-id').value);
         };
 
         peer.on('connection', c => {
