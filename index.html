@@ -7,70 +7,78 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <style>
-        body { touch-action: manipulation; font-family: sans-serif; }
-        .kitchen-gradient { background: linear-gradient(180deg, #2d3436 0%, #000000 100%); }
-        .counter-top { background: #535c68; border-top: 4px solid #95afc0; }
-        .flying-item { animation: flyUp 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+        body { touch-action: manipulation; font-family: 'Inter', sans-serif; }
+        .kitchen-gradient { background: radial-gradient(circle at center, #2d3436 0%, #1a1a1a 100%); }
+        .counter-top { background: #3d4444; border-top: 3px solid #718093; box-shadow: inset 0 2px 10px rgba(0,0,0,0.5); }
+        .flying-item { animation: flyUp 0.5s ease-out forwards; }
         @keyframes flyUp {
             0% { transform: translateY(0) scale(1); opacity: 1; }
-            100% { transform: translateY(-150px) scale(0); opacity: 0; }
+            100% { transform: translateY(-100px) scale(0.5); opacity: 0; }
         }
-        #timer-fill { transition: width 0.1s linear; }
+        #timer-fill { transition: width 0.1s linear, background-color 0.3s; }
+        .btn-press { transition: transform 0.05s; }
+        .btn-press:active { transform: scale(0.92); }
     </style>
 </head>
 <body class="kitchen-gradient h-screen text-white overflow-hidden select-none">
 
-    <div id="setup" class="fixed inset-0 z-50 flex flex-col items-center justify-center bg-zinc-900 p-8 text-center">
-        <h1 class="text-3xl font-black text-orange-500 mb-2 italic">CULINÁRIA SOB PRESSÃO</h1>
-        <p class="text-zinc-400 text-sm mb-8">Single Page Mobile Multiplayer</p>
-        <div id="status" class="mb-4 text-orange-400 font-mono text-xs uppercase tracking-widest">Aguardando PeerJS...</div>
-        <div id="host-controls" class="w-full space-y-4">
-            <div class="bg-zinc-800 p-4 rounded-lg border border-zinc-700">
-                <span class="text-xs block mb-2">SEU ID (COMPARTILHE):</span>
-                <div id="my-id" class="text-xl font-bold tracking-tighter text-blue-400 mb-4 break-all">...</div>
-                <button onclick="copyID()" class="w-full bg-blue-600 py-3 rounded-lg font-bold active:scale-95 transition-transform">COPIAR ID</button>
+    <div id="setup" class="fixed inset-0 z-50 flex flex-col items-center justify-center bg-zinc-950 p-6 text-center">
+        <div class="mb-6">
+            <h1 class="text-2xl font-black text-orange-500 italic leading-none">CULINÁRIA</h1>
+            <h1 class="text-4xl font-black text-white italic leading-none">SOB PRESSÃO</h1>
+        </div>
+        <div id="status" class="mb-6 text-orange-400 font-mono text-[10px] uppercase tracking-[0.2em] animate-pulse">Aguardando PeerJS...</div>
+        
+        <div id="host-controls" class="w-full max-w-xs space-y-3">
+            <div class="bg-zinc-900 p-4 rounded-2xl border border-zinc-800">
+                <span class="text-[10px] text-zinc-500 block mb-1 uppercase font-bold">Seu ID de Acesso</span>
+                <div id="my-id" class="text-lg font-mono font-bold text-blue-400 mb-3 truncate">...</div>
+                <button onclick="copyID()" class="w-full bg-blue-600 text-sm py-3 rounded-xl font-bold btn-press">COPIAR ID</button>
             </div>
-            <div class="py-4 text-zinc-500">OU</div>
-            <input id="join-id" type="text" placeholder="ID do Parceiro" class="w-full p-4 bg-zinc-800 rounded-lg border border-zinc-700 text-center outline-none focus:border-orange-500 text-white">
-            <button onclick="connectToPeer()" class="w-full bg-orange-600 py-3 rounded-lg font-bold active:scale-95 transition-transform">CONECTAR NA COZINHA</button>
+            <div class="relative flex py-2 items-center">
+                <div class="flex-grow border-t border-zinc-800"></div>
+                <span class="flex-shrink mx-4 text-zinc-600 text-[10px] font-bold">OU</span>
+                <div class="flex-grow border-t border-zinc-800"></div>
+            </div>
+            <input id="join-id" type="text" placeholder="Colar ID do Parceiro" class="w-full p-3 bg-zinc-900 rounded-xl border border-zinc-800 text-center outline-none focus:border-orange-500 text-sm">
+            <button onclick="connectToPeer()" class="w-full bg-orange-600 text-sm py-3 rounded-xl font-bold btn-press">ENTRAR NA COZINHA</button>
         </div>
     </div>
 
     <div id="game" class="hidden h-screen flex flex-col">
-        <div class="h-[15%] bg-black/40 flex items-center justify-between px-6 border-b-2 border-orange-500/30">
-            <div class="text-left leading-none">
-                <span class="text-[10px] text-zinc-400 uppercase">Pontos</span>
-                <div id="score" class="text-2xl font-black text-orange-500">0</div>
+        <div class="h-[10%] bg-black/60 flex items-center justify-between px-6">
+            <div>
+                <span class="text-[9px] text-zinc-500 uppercase font-black block">Pontuação</span>
+                <div id="score" class="text-xl font-black text-orange-500">0</div>
             </div>
-            <div class="flex flex-col items-end gap-1">
-                <span class="text-[10px] text-zinc-400 uppercase">Tempo do Cliente</span>
-                <div id="timer-bar" class="w-32 h-3 bg-zinc-800 rounded-full overflow-hidden border border-white/10">
+            <div class="flex flex-col items-end">
+                <span class="text-[9px] text-zinc-500 uppercase font-black mb-1">Tempo do Pedido</span>
+                <div class="w-24 h-2 bg-zinc-800 rounded-full overflow-hidden border border-white/5">
                     <div id="timer-fill" class="h-full bg-green-500 w-full"></div>
                 </div>
             </div>
         </div>
 
-        <div class="h-[25%] flex flex-col items-center justify-center bg-zinc-800 relative">
-            <div class="absolute -top-3 px-3 py-1 bg-orange-600 rounded text-[10px] font-bold uppercase tracking-tighter shadow-lg">Pedido Ativo</div>
-            <div class="flex items-center gap-2 bg-white/10 p-4 rounded-xl border border-white/20">
-                <div id="order-box" class="text-3xl filter drop-shadow-md tracking-widest"></div>
-                <div class="text-xl text-zinc-500">=</div>
-                <div class="text-4xl">🥪</div>
+        <div class="h-[20%] flex flex-col items-center justify-center bg-zinc-900/50 border-b border-white/5 relative">
+            <div class="absolute top-2 px-2 py-0.5 bg-orange-600 rounded-sm text-[8px] font-black uppercase">Pedido</div>
+            <div class="flex items-center gap-3 scale-110">
+                <div id="order-box" class="flex gap-0.5 text-2xl bg-black/20 p-2 rounded-lg border border-white/10"></div>
+                <div class="text-zinc-600">➔</div>
+                <div class="text-3xl">🥪</div>
             </div>
         </div>
 
         <div class="flex-1 flex flex-col items-center justify-center p-4">
-            <div class="w-full max-w-xs aspect-video counter-top rounded-xl shadow-2xl relative flex flex-col items-center justify-center">
-                <div class="absolute -top-8 text-[10px] font-bold text-zinc-400 uppercase tracking-widest italic">Mesa de Montagem</div>
-                <div id="plate" class="text-4xl flex gap-1 flex-wrap justify-center p-2 min-h-[50px]"></div>
-                <div id="anim-layer" class="absolute inset-0 pointer-events-none overflow-visible"></div>
+            <div class="w-full max-w-[280px] h-32 counter-top rounded-2xl relative flex items-center justify-center">
+                <div class="absolute -top-6 text-[9px] font-black text-zinc-500 uppercase tracking-widest">Mesa de Preparo</div>
+                <div id="plate" class="text-2xl flex gap-0.5 flex-wrap justify-center px-4"></div>
+                <div id="anim-layer" class="absolute inset-0 pointer-events-none"></div>
             </div>
         </div>
 
-        <div class="h-[35%] bg-zinc-900 border-t-4 border-zinc-800 p-4 flex flex-col gap-4">
-            <div id="role-tag" class="text-center text-[10px] font-bold text-zinc-500 uppercase tracking-widest italic"></div>
-            <div id="hud-buttons" class="flex justify-center gap-4 h-full"></div>
-            <div class="text-center text-[10px] text-zinc-600 font-bold uppercase">Entrega automática ao completar!</div>
+        <div class="h-[32%] bg-zinc-950 border-t border-zinc-800 p-4 flex flex-col">
+            <div id="role-tag" class="text-center text-[9px] font-black text-zinc-500 uppercase mb-3 tracking-widest"></div>
+            <div id="hud-buttons" class="flex justify-center gap-3 h-full pb-2"></div>
         </div>
     </div>
 
@@ -86,7 +94,7 @@
 
         peer.on('open', id => {
             document.getElementById('my-id').innerText = id;
-            document.getElementById('status').innerText = 'ID Gerado. Pronto!';
+            document.getElementById('status').innerText = 'CONECTADO AO SERVIDOR';
         });
 
         peer.on('connection', c => {
@@ -105,7 +113,6 @@
 
         function copyID() {
             navigator.clipboard.writeText(document.getElementById('my-id').innerText);
-            alert("ID Copiado!");
         }
 
         function initGame() {
@@ -135,7 +142,7 @@
                     document.getElementById('score').innerText = score;
                 }
                 if(data.type === 'TIME_OUT') {
-                    handleTimeOut();
+                    alert("TEMPO ESGOTADO!");
                 }
             });
         }
@@ -143,11 +150,11 @@
         function setupHUD() {
             const container = document.getElementById('hud-buttons');
             const items = role === 'HOST' ? ['🍞', '🧀'] : ['🥬', '🍅', '🔥'];
-            document.getElementById('role-tag').innerText = `Você é o ${role === 'HOST' ? 'Cozinheiro A' : 'Cozinheiro B'}`;
+            document.getElementById('role-tag').innerText = role === 'HOST' ? 'Chef A: Pão e Queijo' : 'Chef B: Vegetais e Grelha';
             
             items.forEach(emoji => {
                 const btn = document.createElement('button');
-                btn.className = "flex-1 bg-zinc-700 rounded-2xl text-4xl shadow-[0_4px_0_0_#18181b] active:translate-y-1 active:shadow-none transition-all";
+                btn.className = "flex-1 bg-zinc-800 rounded-2xl text-3xl shadow-[0_4px_0_0_#000] btn-press border border-white/5";
                 btn.innerHTML = emoji;
                 btn.onclick = () => throwItem(emoji);
                 container.appendChild(btn);
@@ -162,9 +169,9 @@
                 const percentage = (timeLeft / 10) * 100;
                 fill.style.width = `${percentage}%`;
                 
-                if (percentage < 30) fill.className = "h-full bg-red-500 w-full";
-                else if (percentage < 60) fill.className = "h-full bg-yellow-500 w-full";
-                else fill.className = "h-full bg-green-500 w-full";
+                if (percentage < 30) fill.style.backgroundColor = "#ef4444";
+                else if (percentage < 60) fill.style.backgroundColor = "#f59e0b";
+                else fill.style.backgroundColor = "#22c55e";
 
                 if (timeLeft <= 0) {
                     clearInterval(timerInterval);
@@ -174,22 +181,21 @@
         }
 
         function handleTimeOut() {
-            score -= 5;
-            document.getElementById('score').innerText = score;
+            score = Math.max(0, score - 5);
+            updateScoreUI();
             if(role === 'HOST') {
                 conn.send({ type: 'TIME_OUT' });
                 conn.send({ type: 'SYNC_SCORE', score: score });
-                setTimeout(nextOrder, 1000);
+                setTimeout(nextOrder, 800);
             }
-            alert("O cliente cansou de esperar! (-5)");
         }
 
         function throwItem(emoji) {
             const anim = document.createElement('div');
-            anim.className = "absolute left-1/2 bottom-0 text-4xl flying-item";
+            anim.className = "absolute left-1/2 bottom-0 text-3xl flying-item";
             anim.innerText = emoji;
             document.getElementById('anim-layer').appendChild(anim);
-            setTimeout(() => anim.remove(), 600);
+            setTimeout(() => anim.remove(), 500);
 
             currentPlate.push(emoji);
             renderPlate();
@@ -197,29 +203,30 @@
             checkOrder();
         }
 
+        function updateScoreUI() {
+            document.getElementById('score').innerText = score;
+        }
+
         function checkOrder() {
             if (currentPlate.length >= currentOrder.length) {
-                const plateStr = currentPlate.slice().sort().join('');
-                const orderStr = currentOrder.slice().sort().join('');
+                const plateStr = [...currentPlate].sort().join('');
+                const orderStr = [...currentOrder].sort().join('');
                 
                 if (plateStr === orderStr) {
                     clearInterval(timerInterval);
-                    score += 5;
-                    document.getElementById('score').innerText = score;
-                    alert("Perfeito! Pedido entregue. (+5)");
+                    score += 10;
+                    updateScoreUI();
                     if(role === 'HOST') {
                         conn.send({ type: 'SYNC_SCORE', score: score });
-                        setTimeout(nextOrder, 500);
+                        setTimeout(nextOrder, 600);
                     }
-                } else if (currentPlate.length >= currentOrder.length + 1) {
-                    // Se passar do número de ingredientes e estiver errado
+                } else if (currentPlate.length > currentOrder.length) {
                     clearInterval(timerInterval);
-                    score -= 5;
-                    document.getElementById('score').innerText = score;
-                    alert("Erraram a receita! Cliente bravo. (-5)");
+                    score = Math.max(0, score - 2);
+                    updateScoreUI();
                     if(role === 'HOST') {
                         conn.send({ type: 'SYNC_SCORE', score: score });
-                        setTimeout(nextOrder, 500);
+                        setTimeout(nextOrder, 600);
                     }
                 }
             }
@@ -235,7 +242,6 @@
             currentOrder = newOrder;
             currentPlate = [];
             timeLeft = 10;
-            
             conn.send({ type: 'SYNC_ORDER', order: currentOrder });
             renderOrder();
             renderPlate();
@@ -243,11 +249,11 @@
         }
 
         function renderOrder() {
-            document.getElementById('order-box').innerText = currentOrder.join('');
+            document.getElementById('order-box').innerHTML = currentOrder.map(e => `<span>${e}</span>`).join('');
         }
 
         function renderPlate() {
-            document.getElementById('plate').innerText = currentPlate.join('');
+            document.getElementById('plate').innerHTML = currentPlate.map(e => `<span>${e}</span>`).join('');
         }
     </script>
 </body>
