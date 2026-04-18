@@ -13,36 +13,29 @@
         .flying-item { 
             position: absolute; left: 50%; bottom: 20px; font-size: 2.5rem;
             pointer-events: none; will-change: transform, opacity;
-            animation: flyUp 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+            animation: flyUp 0.4s ease-out forwards;
         }
         @keyframes flyUp {
             0% { transform: translate(-50%, 0) scale(1); opacity: 1; }
-            100% { transform: translate(-50%, -200px) scale(0.5); opacity: 0; }
+            100% { transform: translate(-50%, -180px) scale(0.5); opacity: 0; }
         }
-        .timer-low { animation: pulse 0.5s infinite; }
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
-        }
+        #timer-fill { transition: width 0.1s linear; }
     </style>
 </head>
 <body class="kitchen-gradient h-screen text-zinc-100 select-none">
 
     <div id="setup" class="fixed inset-0 z-50 flex flex-col items-center justify-center bg-zinc-950 p-6 text-center">
         <h1 class="text-4xl font-black text-orange-500 mb-2 italic tracking-tighter">KITCHEN PANIC</h1>
-        <div id="status" class="mb-6 text-orange-400 font-mono text-xs uppercase tracking-[0.2em]">Inicializando Rede...</div>
+        <div id="status" class="mb-6 text-orange-400 font-mono text-xs uppercase tracking-widest">Aguardando Conexão...</div>
         
         <div class="w-full max-w-sm space-y-4">
             <div class="bg-zinc-900 p-5 rounded-2xl border border-zinc-800 shadow-2xl">
-                <span class="text-[10px] block mb-2 font-bold text-zinc-500 uppercase">Seu ID de Cozinha</span>
-                <div id="my-id" class="text-lg font-mono font-bold text-blue-400 mb-4 break-all select-all">...</div>
-                <button id="btn-copy" class="w-full bg-zinc-800 hover:bg-zinc-700 py-3 rounded-xl font-bold transition-all border border-zinc-700">COPIAR ID</button>
+                <span class="text-[10px] block mb-2 font-bold text-zinc-500 uppercase italic">ID da sua Cozinha</span>
+                <div id="my-id" class="text-lg font-mono font-bold text-blue-400 mb-4 break-all">...</div>
+                <button id="btn-copy" class="w-full bg-zinc-800 py-3 rounded-xl font-bold border border-zinc-700 active:bg-zinc-700">COPIAR ID</button>
             </div>
-            <div class="flex items-center gap-4 text-zinc-600 font-bold text-sm">
-                <hr class="flex-1 border-zinc-800"> OU <hr class="flex-1 border-zinc-800">
-            </div>
-            <input id="join-id" type="text" placeholder="ID do Amigo" class="w-full p-4 bg-zinc-900 rounded-2xl border border-zinc-800 text-center outline-none focus:border-orange-500 transition-colors">
-            <button id="btn-connect" class="w-full bg-orange-600 hover:bg-orange-500 py-4 rounded-2xl font-black text-lg shadow-lg shadow-orange-900/20 transition-all active:scale-95">ENTRAR NA COZINHA</button>
+            <input id="join-id" type="text" placeholder="ID do Amigo" class="w-full p-4 bg-zinc-900 rounded-2xl border border-zinc-800 text-center outline-none focus:border-orange-500">
+            <button id="btn-connect" class="w-full bg-orange-600 py-4 rounded-2xl font-black text-lg active:scale-95 transition-all">CONECTAR</button>
         </div>
     </div>
 
@@ -53,37 +46,36 @@
                 <div id="score" class="text-3xl font-black text-orange-500 tracking-tighter">0</div>
             </div>
             <div class="flex flex-col items-end w-1/2">
-                <span class="text-[10px] text-zinc-500 font-bold uppercase mb-1">Tempo do Pedido</span>
+                <span class="text-[10px] text-zinc-500 font-bold uppercase mb-1">Tempo Limite</span>
                 <div class="w-full h-3 bg-zinc-900 rounded-full overflow-hidden border border-zinc-800">
-                    <div id="timer-fill" class="h-full bg-green-500 w-full transition-colors"></div>
+                    <div id="timer-fill" class="h-full bg-green-500 w-full"></div>
                 </div>
             </div>
         </div>
 
-        <div class="h-[20%] flex flex-col items-center justify-center relative px-4">
+        <div class="h-[20%] flex flex-col items-center justify-center relative px-4 text-center">
             <div class="bg-zinc-800/50 backdrop-blur-sm w-full py-4 rounded-3xl border border-white/5 flex flex-col items-center shadow-xl">
-                <div class="text-[10px] font-black text-orange-500 uppercase tracking-widest mb-2">Pedido Atual</div>
-                <div id="order-box" class="text-4xl tracking-[0.3em] drop-shadow-lg"></div>
+                <div class="text-[10px] font-black text-orange-500 uppercase tracking-widest mb-1">Receita do Cliente</div>
+                <div id="order-box" class="text-3xl tracking-tighter drop-shadow-lg"></div>
             </div>
         </div>
 
         <div class="flex-1 flex flex-col items-center justify-center relative">
-            <div class="w-[85%] aspect-square counter-top rounded-[2.5rem] shadow-[0_20px_50px_rgba(0,0,0,0.5)] flex flex-col items-center justify-center border-b-8 border-zinc-900">
-                <div id="plate" class="text-5xl flex gap-1 flex-wrap justify-center items-center p-4"></div>
+            <div class="w-[85%] aspect-square counter-top rounded-[2.5rem] shadow-2xl flex flex-col items-center justify-center border-b-8 border-zinc-900">
+                <div id="plate" class="text-4xl flex gap-1 flex-wrap justify-center items-center p-4"></div>
                 <div id="anim-layer" class="absolute inset-0 pointer-events-none"></div>
             </div>
         </div>
 
-        <div class="h-[35%] p-6 flex flex-col gap-4 bg-zinc-950/80 rounded-t-[3rem] border-t border-white/5 shadow-2xl">
-            <div id="role-tag" class="text-center text-[10px] font-black text-zinc-500 uppercase tracking-widest">Sincronizando...</div>
-            <div id="hud-buttons" class="flex justify-center gap-3 h-20"></div>
-            <div class="text-center text-[10px] text-zinc-600 font-bold uppercase italic opacity-50">Sincronização P2P de Alta Precisão</div>
+        <div class="h-[38%] p-4 flex flex-col gap-3 bg-zinc-950/90 rounded-t-[2.5rem] border-t border-white/10">
+            <div id="role-tag" class="text-center text-[10px] font-black text-zinc-500 uppercase tracking-widest">Iniciando...</div>
+            <div id="hud-buttons" class="grid grid-cols-3 gap-2 h-20"></div>
+            <div id="special-action" class="h-16"></div>
         </div>
     </div>
 
     <script>
-        const PEER_CONFIG = { debug: 1 };
-        let peer = new Peer(PEER_CONFIG);
+        let peer = new Peer();
         let conn = null;
         let role = '';
         
@@ -92,26 +84,25 @@
             plate: [],
             order: [],
             orderStartTime: 0,
-            duration: 12000,
+            duration: 10000,
             active: false
         };
 
-        const ITEMS = { HOST: ['🍞', '🧀'], GUEST: ['🥬', '🍅', '🔥'] };
+        // Layout de Controles conforme pedido
+        const CONTROLS = {
+            HOST: { items: ['🍞', '🔥'], action: '🥪' },
+            GUEST: { items: ['🧀', '🥚', '🍅', '🧅', '🥬'], action: null }
+        };
 
-        peer.on('open', id => {
-            document.getElementById('my-id').innerText = id;
-            document.getElementById('status').innerText = 'Rede Pronta';
-        });
+        peer.on('open', id => document.getElementById('my-id').innerText = id);
 
         document.getElementById('btn-copy').onclick = () => {
             navigator.clipboard.writeText(document.getElementById('my-id').innerText);
-            alert("ID Copiado!");
+            alert("Copiado!");
         };
 
         document.getElementById('btn-connect').onclick = () => {
-            const id = document.getElementById('join-id').value;
-            if(!id) return;
-            conn = peer.connect(id, { reliable: true });
+            conn = peer.connect(document.getElementById('join-id').value, { reliable: true });
             role = 'GUEST';
             setupConnection();
         };
@@ -132,92 +123,97 @@
             });
 
             conn.on('data', data => {
-                if (role === 'GUEST' && data.type === 'STATE_UPDATE') {
+                if (role === 'GUEST' && data.type === 'SYNC') {
                     Object.assign(STATE, data.state);
                     renderUI();
                 }
-                if (role === 'HOST' && data.type === 'INPUT') {
-                    handleInput(data.item);
-                }
+                if (role === 'HOST' && data.type === 'INPUT') handleInput(data.item);
+                if (role === 'HOST' && data.type === 'TRY_SERVE') checkFinalServe();
             });
         }
 
         function renderHUD() {
             const container = document.getElementById('hud-buttons');
-            const myItems = ITEMS[role];
+            const special = document.getElementById('special-action');
+            const myConfig = CONTROLS[role];
+            
             container.innerHTML = '';
-            myItems.forEach(emoji => {
-                const btn = document.createElement('button');
-                btn.className = "flex-1 bg-zinc-800 rounded-2xl text-4xl shadow-[0_6px_0_0_#18181b] active:translate-y-1 active:shadow-none transition-all border border-zinc-700/50";
-                btn.innerHTML = emoji;
-                btn.addEventListener('pointerdown', (e) => {
-                    e.preventDefault();
+            myConfig.items.forEach(emoji => {
+                const btn = createBtn(emoji, "bg-zinc-800 text-3xl", () => {
                     if(role === 'GUEST') conn.send({ type: 'INPUT', item: emoji });
                     else handleInput(emoji);
                     showFlyAnim(emoji);
                 });
                 container.appendChild(btn);
             });
-            document.getElementById('role-tag').innerText = `Chef: ${role === 'HOST' ? 'Bancada A' : 'Bancada B'}`;
+
+            if (myConfig.action) {
+                const serveBtn = createBtn(myConfig.action + " ENTREGAR", "bg-green-600 text-xl font-black w-full", () => {
+                    checkFinalServe();
+                });
+                special.appendChild(serveBtn);
+            }
+            document.getElementById('role-tag').innerText = role === 'HOST' ? 'Chef Host: Massas e Entrega' : 'Chef Guest: Recheios';
         }
 
-        function handleInput(item) {
-            if(!STATE.active) return;
-            STATE.plate.push(item);
-            checkLogic();
-            broadcastState();
-            renderUI();
+        function createBtn(text, cls, cb) {
+            const b = document.createElement('button');
+            b.className = `${cls} rounded-2xl shadow-[0_4px_0_0_#000] active:translate-y-1 active:shadow-none transition-all border border-white/5`;
+            b.innerText = text;
+            b.addEventListener('pointerdown', (e) => { e.preventDefault(); cb(); });
+            return b;
         }
 
         function startNewRound() {
-            const pool = ['🧀', '🥬', '🍅'];
-            const newOrder = ['🍞', '🔥'];
-            const extraSize = Math.floor(Math.random() * 2) + 1;
+            const pool = ['🧀', '🥚', '🍅', '🧅', '🥬'];
+            let newOrder = ['🍞'];
+            const extraSize = Math.floor(Math.random() * 3) + 1; // 1 a 3 ingredientes de recheio
             for(let i=0; i<extraSize; i++) newOrder.push(pool[Math.floor(Math.random()*pool.length)]);
+            newOrder.push('🍞'); // Pão no final
             
             STATE.order = newOrder;
             STATE.plate = [];
             STATE.orderStartTime = Date.now();
             STATE.active = true;
-            STATE.duration = Math.max(6000, 12000 - (STATE.score * 100)); // Dificuldade progressiva
-            
-            broadcastState();
+            broadcast();
             renderUI();
         }
 
-        function checkLogic() {
-            const isMatch = compareMultisets(STATE.plate, STATE.order);
-            if (isMatch) {
+        function handleInput(item) {
+            if(!STATE.active) return;
+            STATE.plate.push(item);
+            
+            // Validação instantânea de erro se exceder tamanho ou se for pão no meio errado
+            if (STATE.plate.length > STATE.order.length) {
+                fail("Ingredientes demais!");
+            } else {
+                broadcast();
+                renderUI();
+            }
+        }
+
+        function checkFinalServe() {
+            if(!STATE.active) return;
+            const isCorrect = JSON.stringify(STATE.plate) === JSON.stringify(STATE.order);
+            if (isCorrect) {
                 STATE.score += 5;
                 STATE.active = false;
-                setTimeout(startNewRound, 800);
-            } else if (STATE.plate.length >= STATE.order.length + 1) {
-                failRound("Receita Errada!");
+                renderUI();
+                setTimeout(startNewRound, 600);
+            } else {
+                fail("Receita incorreta!");
             }
         }
 
-        function failRound(msg) {
+        function fail(reason) {
             STATE.score = Math.max(0, STATE.score - 5);
             STATE.active = false;
-            broadcastState();
-            setTimeout(startNewRound, 800);
+            renderUI();
+            setTimeout(startNewRound, 600);
         }
 
-        function compareMultisets(a, b) {
-            if (a.length !== b.length) return false;
-            const counts = {};
-            for (const item of a) counts[item] = (counts[item] || 0) + 1;
-            for (const item of b) {
-                if (!counts[item]) return false;
-                counts[item]--;
-            }
-            return true;
-        }
-
-        function broadcastState() {
-            if(role === 'HOST' && conn.open) {
-                conn.send({ type: 'STATE_UPDATE', state: STATE });
-            }
+        function broadcast() {
+            if(role === 'HOST' && conn.open) conn.send({ type: 'SYNC', state: STATE });
         }
 
         function showFlyAnim(emoji) {
@@ -225,32 +221,27 @@
             el.className = 'flying-item';
             el.innerText = emoji;
             document.getElementById('anim-layer').appendChild(el);
-            setTimeout(() => el.remove(), 500);
+            setTimeout(() => el.remove(), 400);
         }
 
         function renderUI() {
             document.getElementById('score').innerText = STATE.score;
-            document.getElementById('order-box').innerText = STATE.order.join('');
-            document.getElementById('plate').innerText = STATE.plate.join('');
+            document.getElementById('order-box').innerText = STATE.order.join(' ');
+            document.getElementById('plate').innerText = STATE.plate.join(' ');
         }
 
         function gameLoop() {
             if (STATE.active) {
-                const now = Date.now();
-                const elapsed = now - STATE.orderStartTime;
-                const remaining = Math.max(0, STATE.duration - elapsed);
-                const pct = (remaining / STATE.duration) * 100;
-                
+                const elapsed = Date.now() - STATE.orderStartTime;
+                const pct = Math.max(0, 100 - (elapsed / STATE.duration * 100));
                 const bar = document.getElementById('timer-fill');
                 bar.style.width = pct + '%';
                 
-                if(pct < 30) bar.style.backgroundColor = '#ef4444';
-                else if(pct < 60) bar.style.backgroundColor = '#eab308';
-                else bar.style.backgroundColor = '#22c55e';
+                if(pct < 25) bar.className = "h-full bg-red-600 w-full";
+                else if(pct < 50) bar.className = "h-full bg-yellow-500 w-full";
+                else bar.className = "h-full bg-green-500 w-full";
 
-                if (remaining <= 0 && role === 'HOST') {
-                    failRound("Tempo Esgotado!");
-                }
+                if (elapsed >= STATE.duration && role === 'HOST') fail("Tempo esgotado!");
             }
             requestAnimationFrame(gameLoop);
         }
