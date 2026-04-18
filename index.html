@@ -3,257 +3,256 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Culinária Sob Pressão</title>
+    <title>Culinária Sob Pressão PRO</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <style>
-        body { touch-action: manipulation; font-family: 'Inter', sans-serif; }
-        .kitchen-gradient { background: radial-gradient(circle at center, #2d3436 0%, #1a1a1a 100%); }
-        .counter-top { background: #3d4444; border-top: 3px solid #718093; box-shadow: inset 0 2px 10px rgba(0,0,0,0.5); }
-        .flying-item { animation: flyUp 0.5s ease-out forwards; }
-        @keyframes flyUp {
-            0% { transform: translateY(0) scale(1); opacity: 1; }
-            100% { transform: translateY(-100px) scale(0.5); opacity: 0; }
+        body { touch-action: manipulation; font-family: system-ui, sans-serif; overflow: hidden; background: #09090b; }
+        .kitchen-gradient { background: radial-gradient(circle at center, #18181b 0%, #000 100%); }
+        .counter-top { background: #3f3f46; border-top: 4px solid #71717a; position: relative; }
+        .flying-item { 
+            position: absolute; left: 50%; bottom: 20px; font-size: 2.5rem;
+            pointer-events: none; will-change: transform, opacity;
+            animation: flyUp 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
         }
-        #timer-fill { transition: width 0.1s linear, background-color 0.3s; }
-        .btn-press { transition: transform 0.05s; }
-        .btn-press:active { transform: scale(0.92); }
+        @keyframes flyUp {
+            0% { transform: translate(-50%, 0) scale(1); opacity: 1; }
+            100% { transform: translate(-50%, -200px) scale(0.5); opacity: 0; }
+        }
+        .timer-low { animation: pulse 0.5s infinite; }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
     </style>
 </head>
-<body class="kitchen-gradient h-screen text-white overflow-hidden select-none">
+<body class="kitchen-gradient h-screen text-zinc-100 select-none">
 
     <div id="setup" class="fixed inset-0 z-50 flex flex-col items-center justify-center bg-zinc-950 p-6 text-center">
-        <div class="mb-6">
-            <h1 class="text-2xl font-black text-orange-500 italic leading-none">CULINÁRIA</h1>
-            <h1 class="text-4xl font-black text-white italic leading-none">SOB PRESSÃO</h1>
-        </div>
-        <div id="status" class="mb-6 text-orange-400 font-mono text-[10px] uppercase tracking-[0.2em] animate-pulse">Aguardando PeerJS...</div>
+        <h1 class="text-4xl font-black text-orange-500 mb-2 italic tracking-tighter">KITCHEN PANIC</h1>
+        <div id="status" class="mb-6 text-orange-400 font-mono text-xs uppercase tracking-[0.2em]">Inicializando Rede...</div>
         
-        <div id="host-controls" class="w-full max-w-xs space-y-3">
-            <div class="bg-zinc-900 p-4 rounded-2xl border border-zinc-800">
-                <span class="text-[10px] text-zinc-500 block mb-1 uppercase font-bold">Seu ID de Acesso</span>
-                <div id="my-id" class="text-lg font-mono font-bold text-blue-400 mb-3 truncate">...</div>
-                <button onclick="copyID()" class="w-full bg-blue-600 text-sm py-3 rounded-xl font-bold btn-press">COPIAR ID</button>
+        <div class="w-full max-w-sm space-y-4">
+            <div class="bg-zinc-900 p-5 rounded-2xl border border-zinc-800 shadow-2xl">
+                <span class="text-[10px] block mb-2 font-bold text-zinc-500 uppercase">Seu ID de Cozinha</span>
+                <div id="my-id" class="text-lg font-mono font-bold text-blue-400 mb-4 break-all select-all">...</div>
+                <button id="btn-copy" class="w-full bg-zinc-800 hover:bg-zinc-700 py-3 rounded-xl font-bold transition-all border border-zinc-700">COPIAR ID</button>
             </div>
-            <div class="relative flex py-2 items-center">
-                <div class="flex-grow border-t border-zinc-800"></div>
-                <span class="flex-shrink mx-4 text-zinc-600 text-[10px] font-bold">OU</span>
-                <div class="flex-grow border-t border-zinc-800"></div>
+            <div class="flex items-center gap-4 text-zinc-600 font-bold text-sm">
+                <hr class="flex-1 border-zinc-800"> OU <hr class="flex-1 border-zinc-800">
             </div>
-            <input id="join-id" type="text" placeholder="Colar ID do Parceiro" class="w-full p-3 bg-zinc-900 rounded-xl border border-zinc-800 text-center outline-none focus:border-orange-500 text-sm">
-            <button onclick="connectToPeer()" class="w-full bg-orange-600 text-sm py-3 rounded-xl font-bold btn-press">ENTRAR NA COZINHA</button>
+            <input id="join-id" type="text" placeholder="ID do Amigo" class="w-full p-4 bg-zinc-900 rounded-2xl border border-zinc-800 text-center outline-none focus:border-orange-500 transition-colors">
+            <button id="btn-connect" class="w-full bg-orange-600 hover:bg-orange-500 py-4 rounded-2xl font-black text-lg shadow-lg shadow-orange-900/20 transition-all active:scale-95">ENTRAR NA COZINHA</button>
         </div>
     </div>
 
-    <div id="game" class="hidden h-screen flex flex-col">
-        <div class="h-[10%] bg-black/60 flex items-center justify-between px-6">
+    <div id="game" class="hidden h-screen flex flex-col max-w-md mx-auto relative">
+        <div class="h-[12%] flex items-center justify-between px-6 pt-2">
             <div>
-                <span class="text-[9px] text-zinc-500 uppercase font-black block">Pontuação</span>
-                <div id="score" class="text-xl font-black text-orange-500">0</div>
+                <span class="text-[10px] text-zinc-500 font-bold uppercase block">Score</span>
+                <div id="score" class="text-3xl font-black text-orange-500 tracking-tighter">0</div>
             </div>
-            <div class="flex flex-col items-end">
-                <span class="text-[9px] text-zinc-500 uppercase font-black mb-1">Tempo do Pedido</span>
-                <div class="w-24 h-2 bg-zinc-800 rounded-full overflow-hidden border border-white/5">
-                    <div id="timer-fill" class="h-full bg-green-500 w-full"></div>
+            <div class="flex flex-col items-end w-1/2">
+                <span class="text-[10px] text-zinc-500 font-bold uppercase mb-1">Tempo do Pedido</span>
+                <div class="w-full h-3 bg-zinc-900 rounded-full overflow-hidden border border-zinc-800">
+                    <div id="timer-fill" class="h-full bg-green-500 w-full transition-colors"></div>
                 </div>
             </div>
         </div>
 
-        <div class="h-[20%] flex flex-col items-center justify-center bg-zinc-900/50 border-b border-white/5 relative">
-            <div class="absolute top-2 px-2 py-0.5 bg-orange-600 rounded-sm text-[8px] font-black uppercase">Pedido</div>
-            <div class="flex items-center gap-3 scale-110">
-                <div id="order-box" class="flex gap-0.5 text-2xl bg-black/20 p-2 rounded-lg border border-white/10"></div>
-                <div class="text-zinc-600">➔</div>
-                <div class="text-3xl">🥪</div>
+        <div class="h-[20%] flex flex-col items-center justify-center relative px-4">
+            <div class="bg-zinc-800/50 backdrop-blur-sm w-full py-4 rounded-3xl border border-white/5 flex flex-col items-center shadow-xl">
+                <div class="text-[10px] font-black text-orange-500 uppercase tracking-widest mb-2">Pedido Atual</div>
+                <div id="order-box" class="text-4xl tracking-[0.3em] drop-shadow-lg"></div>
             </div>
         </div>
 
-        <div class="flex-1 flex flex-col items-center justify-center p-4">
-            <div class="w-full max-w-[280px] h-32 counter-top rounded-2xl relative flex items-center justify-center">
-                <div class="absolute -top-6 text-[9px] font-black text-zinc-500 uppercase tracking-widest">Mesa de Preparo</div>
-                <div id="plate" class="text-2xl flex gap-0.5 flex-wrap justify-center px-4"></div>
+        <div class="flex-1 flex flex-col items-center justify-center relative">
+            <div class="w-[85%] aspect-square counter-top rounded-[2.5rem] shadow-[0_20px_50px_rgba(0,0,0,0.5)] flex flex-col items-center justify-center border-b-8 border-zinc-900">
+                <div id="plate" class="text-5xl flex gap-1 flex-wrap justify-center items-center p-4"></div>
                 <div id="anim-layer" class="absolute inset-0 pointer-events-none"></div>
             </div>
         </div>
 
-        <div class="h-[32%] bg-zinc-950 border-t border-zinc-800 p-4 flex flex-col">
-            <div id="role-tag" class="text-center text-[9px] font-black text-zinc-500 uppercase mb-3 tracking-widest"></div>
-            <div id="hud-buttons" class="flex justify-center gap-3 h-full pb-2"></div>
+        <div class="h-[35%] p-6 flex flex-col gap-4 bg-zinc-950/80 rounded-t-[3rem] border-t border-white/5 shadow-2xl">
+            <div id="role-tag" class="text-center text-[10px] font-black text-zinc-500 uppercase tracking-widest">Sincronizando...</div>
+            <div id="hud-buttons" class="flex justify-center gap-3 h-20"></div>
+            <div class="text-center text-[10px] text-zinc-600 font-bold uppercase italic opacity-50">Sincronização P2P de Alta Precisão</div>
         </div>
     </div>
 
     <script>
-        let peer = new Peer();
+        const PEER_CONFIG = { debug: 1 };
+        let peer = new Peer(PEER_CONFIG);
         let conn = null;
-        let role = ''; 
-        let score = 0;
-        let currentPlate = [];
-        let currentOrder = [];
-        let timeLeft = 10;
-        let timerInterval = null;
+        let role = '';
+        
+        const STATE = {
+            score: 0,
+            plate: [],
+            order: [],
+            orderStartTime: 0,
+            duration: 12000,
+            active: false
+        };
+
+        const ITEMS = { HOST: ['🍞', '🧀'], GUEST: ['🥬', '🍅', '🔥'] };
 
         peer.on('open', id => {
             document.getElementById('my-id').innerText = id;
-            document.getElementById('status').innerText = 'CONECTADO AO SERVIDOR';
+            document.getElementById('status').innerText = 'Rede Pronta';
         });
+
+        document.getElementById('btn-copy').onclick = () => {
+            navigator.clipboard.writeText(document.getElementById('my-id').innerText);
+            alert("ID Copiado!");
+        };
+
+        document.getElementById('btn-connect').onclick = () => {
+            const id = document.getElementById('join-id').value;
+            if(!id) return;
+            conn = peer.connect(id, { reliable: true });
+            role = 'GUEST';
+            setupConnection();
+        };
 
         peer.on('connection', c => {
             conn = c;
             role = 'HOST';
-            initGame();
+            setupConnection();
         });
 
-        function connectToPeer() {
-            const id = document.getElementById('join-id').value;
-            if(!id) return;
-            conn = peer.connect(id);
-            role = 'GUEST';
-            initGame();
-        }
-
-        function copyID() {
-            navigator.clipboard.writeText(document.getElementById('my-id').innerText);
-        }
-
-        function initGame() {
+        function setupConnection() {
             conn.on('open', () => {
                 document.getElementById('setup').classList.add('hidden');
                 document.getElementById('game').classList.remove('hidden');
-                setupHUD();
-                if(role === 'HOST') nextOrder();
+                renderHUD();
+                if(role === 'HOST') startNewRound();
+                requestAnimationFrame(gameLoop);
             });
 
             conn.on('data', data => {
-                if(data.type === 'SYNC_ORDER') {
-                    currentOrder = data.order;
-                    currentPlate = [];
-                    timeLeft = 10;
-                    renderOrder();
-                    renderPlate();
-                    startTimer();
+                if (role === 'GUEST' && data.type === 'STATE_UPDATE') {
+                    Object.assign(STATE, data.state);
+                    renderUI();
                 }
-                if(data.type === 'ADD_PLATE') {
-                    currentPlate.push(data.item);
-                    renderPlate();
-                    checkOrder();
-                }
-                if(data.type === 'SYNC_SCORE') {
-                    score = data.score;
-                    document.getElementById('score').innerText = score;
-                }
-                if(data.type === 'TIME_OUT') {
-                    alert("TEMPO ESGOTADO!");
+                if (role === 'HOST' && data.type === 'INPUT') {
+                    handleInput(data.item);
                 }
             });
         }
 
-        function setupHUD() {
+        function renderHUD() {
             const container = document.getElementById('hud-buttons');
-            const items = role === 'HOST' ? ['🍞', '🧀'] : ['🥬', '🍅', '🔥'];
-            document.getElementById('role-tag').innerText = role === 'HOST' ? 'Chef A: Pão e Queijo' : 'Chef B: Vegetais e Grelha';
-            
-            items.forEach(emoji => {
+            const myItems = ITEMS[role];
+            container.innerHTML = '';
+            myItems.forEach(emoji => {
                 const btn = document.createElement('button');
-                btn.className = "flex-1 bg-zinc-800 rounded-2xl text-3xl shadow-[0_4px_0_0_#000] btn-press border border-white/5";
+                btn.className = "flex-1 bg-zinc-800 rounded-2xl text-4xl shadow-[0_6px_0_0_#18181b] active:translate-y-1 active:shadow-none transition-all border border-zinc-700/50";
                 btn.innerHTML = emoji;
-                btn.onclick = () => throwItem(emoji);
+                btn.addEventListener('pointerdown', (e) => {
+                    e.preventDefault();
+                    if(role === 'GUEST') conn.send({ type: 'INPUT', item: emoji });
+                    else handleInput(emoji);
+                    showFlyAnim(emoji);
+                });
                 container.appendChild(btn);
             });
+            document.getElementById('role-tag').innerText = `Chef: ${role === 'HOST' ? 'Bancada A' : 'Bancada B'}`;
         }
 
-        function startTimer() {
-            clearInterval(timerInterval);
-            const fill = document.getElementById('timer-fill');
-            timerInterval = setInterval(() => {
-                timeLeft -= 0.1;
-                const percentage = (timeLeft / 10) * 100;
-                fill.style.width = `${percentage}%`;
-                
-                if (percentage < 30) fill.style.backgroundColor = "#ef4444";
-                else if (percentage < 60) fill.style.backgroundColor = "#f59e0b";
-                else fill.style.backgroundColor = "#22c55e";
-
-                if (timeLeft <= 0) {
-                    clearInterval(timerInterval);
-                    if(role === 'HOST') handleTimeOut();
-                }
-            }, 100);
+        function handleInput(item) {
+            if(!STATE.active) return;
+            STATE.plate.push(item);
+            checkLogic();
+            broadcastState();
+            renderUI();
         }
 
-        function handleTimeOut() {
-            score = Math.max(0, score - 5);
-            updateScoreUI();
-            if(role === 'HOST') {
-                conn.send({ type: 'TIME_OUT' });
-                conn.send({ type: 'SYNC_SCORE', score: score });
-                setTimeout(nextOrder, 800);
-            }
-        }
-
-        function throwItem(emoji) {
-            const anim = document.createElement('div');
-            anim.className = "absolute left-1/2 bottom-0 text-3xl flying-item";
-            anim.innerText = emoji;
-            document.getElementById('anim-layer').appendChild(anim);
-            setTimeout(() => anim.remove(), 500);
-
-            currentPlate.push(emoji);
-            renderPlate();
-            conn.send({ type: 'ADD_PLATE', item: emoji });
-            checkOrder();
-        }
-
-        function updateScoreUI() {
-            document.getElementById('score').innerText = score;
-        }
-
-        function checkOrder() {
-            if (currentPlate.length >= currentOrder.length) {
-                const plateStr = [...currentPlate].sort().join('');
-                const orderStr = [...currentOrder].sort().join('');
-                
-                if (plateStr === orderStr) {
-                    clearInterval(timerInterval);
-                    score += 10;
-                    updateScoreUI();
-                    if(role === 'HOST') {
-                        conn.send({ type: 'SYNC_SCORE', score: score });
-                        setTimeout(nextOrder, 600);
-                    }
-                } else if (currentPlate.length > currentOrder.length) {
-                    clearInterval(timerInterval);
-                    score = Math.max(0, score - 2);
-                    updateScoreUI();
-                    if(role === 'HOST') {
-                        conn.send({ type: 'SYNC_SCORE', score: score });
-                        setTimeout(nextOrder, 600);
-                    }
-                }
-            }
-        }
-
-        function nextOrder() {
+        function startNewRound() {
             const pool = ['🧀', '🥬', '🍅'];
-            let newOrder = ['🍞', '🔥']; 
-            const extraCount = Math.floor(Math.random() * 2) + 1;
-            for(let i=0; i<extraCount; i++) {
-                newOrder.push(pool[Math.floor(Math.random()*pool.length)]);
+            const newOrder = ['🍞', '🔥'];
+            const extraSize = Math.floor(Math.random() * 2) + 1;
+            for(let i=0; i<extraSize; i++) newOrder.push(pool[Math.floor(Math.random()*pool.length)]);
+            
+            STATE.order = newOrder;
+            STATE.plate = [];
+            STATE.orderStartTime = Date.now();
+            STATE.active = true;
+            STATE.duration = Math.max(6000, 12000 - (STATE.score * 100)); // Dificuldade progressiva
+            
+            broadcastState();
+            renderUI();
+        }
+
+        function checkLogic() {
+            const isMatch = compareMultisets(STATE.plate, STATE.order);
+            if (isMatch) {
+                STATE.score += 5;
+                STATE.active = false;
+                setTimeout(startNewRound, 800);
+            } else if (STATE.plate.length >= STATE.order.length + 1) {
+                failRound("Receita Errada!");
             }
-            currentOrder = newOrder;
-            currentPlate = [];
-            timeLeft = 10;
-            conn.send({ type: 'SYNC_ORDER', order: currentOrder });
-            renderOrder();
-            renderPlate();
-            startTimer();
         }
 
-        function renderOrder() {
-            document.getElementById('order-box').innerHTML = currentOrder.map(e => `<span>${e}</span>`).join('');
+        function failRound(msg) {
+            STATE.score = Math.max(0, STATE.score - 5);
+            STATE.active = false;
+            broadcastState();
+            setTimeout(startNewRound, 800);
         }
 
-        function renderPlate() {
-            document.getElementById('plate').innerHTML = currentPlate.map(e => `<span>${e}</span>`).join('');
+        function compareMultisets(a, b) {
+            if (a.length !== b.length) return false;
+            const counts = {};
+            for (const item of a) counts[item] = (counts[item] || 0) + 1;
+            for (const item of b) {
+                if (!counts[item]) return false;
+                counts[item]--;
+            }
+            return true;
+        }
+
+        function broadcastState() {
+            if(role === 'HOST' && conn.open) {
+                conn.send({ type: 'STATE_UPDATE', state: STATE });
+            }
+        }
+
+        function showFlyAnim(emoji) {
+            const el = document.createElement('div');
+            el.className = 'flying-item';
+            el.innerText = emoji;
+            document.getElementById('anim-layer').appendChild(el);
+            setTimeout(() => el.remove(), 500);
+        }
+
+        function renderUI() {
+            document.getElementById('score').innerText = STATE.score;
+            document.getElementById('order-box').innerText = STATE.order.join('');
+            document.getElementById('plate').innerText = STATE.plate.join('');
+        }
+
+        function gameLoop() {
+            if (STATE.active) {
+                const now = Date.now();
+                const elapsed = now - STATE.orderStartTime;
+                const remaining = Math.max(0, STATE.duration - elapsed);
+                const pct = (remaining / STATE.duration) * 100;
+                
+                const bar = document.getElementById('timer-fill');
+                bar.style.width = pct + '%';
+                
+                if(pct < 30) bar.style.backgroundColor = '#ef4444';
+                else if(pct < 60) bar.style.backgroundColor = '#eab308';
+                else bar.style.backgroundColor = '#22c55e';
+
+                if (remaining <= 0 && role === 'HOST') {
+                    failRound("Tempo Esgotado!");
+                }
+            }
+            requestAnimationFrame(gameLoop);
         }
     </script>
 </body>
