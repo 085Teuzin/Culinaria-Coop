@@ -3,18 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Zen Kitchen - Cloud Edition</title>
+    <title>Culinária coop - Made By: @085_Teuzinnn</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body { background-color: #0f0f0f; touch-action: manipulation; }
         .tap-effect:active { transform: scale(0.95); }
         .ingrediente-item { transition: all 0.1s ease; line-height: 1; }
-        .safe-bottom { padding-bottom: calc(1rem + env(safe-area-inset-bottom)); }
         #toast-container { pointer-events: none; }
         .toast { animation: slideIn 0.3s ease-out, fadeOut 0.3s ease-in 0.7s forwards; }
         @keyframes slideIn { from { transform: translateY(100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
         @keyframes fadeOut { to { opacity: 0; } }
         .p-bar { transition: width linear; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
     </style>
 </head>
 <body class="text-stone-100 font-sans select-none overflow-hidden h-screen flex flex-col">
@@ -23,14 +23,13 @@
 
     <div id="setup-screen" class="fixed inset-0 z-50 bg-[#121212] flex flex-col items-center justify-center p-6 text-center">
         <div class="mb-8">
-            <h1 class="text-5xl font-black text-red-600 italic tracking-tighter">ZEN<span class="text-yellow-500">KITCHEN</span></h1>
-            <p class="text-stone-500 uppercase tracking-widest text-[10px] mt-2">Fast Food Co-op</p>
+            <h1 class="text-5xl font-black text-red-600 italic tracking-tighter">Culinaria coop</h1>
         </div>
         
         <div class="space-y-4 w-full max-w-xs">
             <div class="flex flex-col gap-2">
                 <label class="text-[10px] font-bold text-stone-500 uppercase tracking-widest">Nome da Sala</label>
-                <input id="room-name" type="text" placeholder="EX: COZINHA123" class="w-full bg-stone-800 border-2 border-stone-700 py-4 px-4 rounded-2xl outline-none focus:border-yellow-500 text-center font-bold text-white uppercase tracking-widest">
+                <input id="room-name" type="text" placeholder="Ex: cozinha123" class="w-full bg-stone-800 border-2 border-stone-700 py-4 px-4 rounded-2xl outline-none focus:border-yellow-500 text-center font-bold text-white uppercase tracking-widest">
             </div>
             
             <div id="initial-actions" class="grid grid-cols-2 gap-3">
@@ -38,23 +37,25 @@
                 <button onclick="startSession('guest')" class="bg-yellow-500 text-black py-4 rounded-2xl font-black shadow-[0_4px_0_rgb(202,138,4)] tap-effect uppercase text-xs">Entrar</button>
             </div>
         </div>
+
+        <div class="absolute bottom-10 left-0 right-0 text-center">
+            <p class="text-stone-600 text-[10px] font-bold uppercase tracking-[0.3em]">Made by: @085_Teuzinnn</p>
+        </div>
     </div>
 
     <div class="flex-1 flex flex-col max-w-md mx-auto w-full relative overflow-hidden bg-[#0f0f0f]">
         <header class="flex justify-between items-center p-4 bg-[#121212] border-b border-stone-800 pt-[calc(1rem + env(safe-area-inset-top))]">
             <span id="wallet" class="text-2xl font-black text-white italic">R$ 0,00</span>
-            <div id="role-badge" class="px-3 py-1 rounded-lg text-[9px] font-black uppercase border tracking-tighter">Sincronizando...</div>
+            <div id="role-badge" class="px-3 py-1 rounded-lg text-[9px] font-black uppercase border tracking-tighter">...</div>
         </header>
 
         <div class="bg-red-600/5 border-b border-stone-800 py-3 text-center">
             <span class="text-[9px] font-black text-red-500 uppercase tracking-widest block mb-1">Pedido Atual</span>
-            <div id="order-display" class="flex gap-1.5 justify-center items-center text-3xl h-10">
-                <span class="text-stone-700 text-xs italic">Aguardando Host...</span>
-            </div>
+            <div id="order-display" class="flex gap-1.5 justify-center items-center text-2xl h-10 overflow-x-auto no-scrollbar px-4"></div>
         </div>
 
         <div class="p-2 border-b border-stone-800 bg-stone-900/20">
-            <span class="text-[9px] font-black text-stone-600 uppercase text-center block mb-1">Mesa</span>
+            <span class="text-[9px] font-black text-stone-600 uppercase text-center block mb-1">Mesa de Montagem</span>
             <div id="assembly-table" class="min-h-[70px] flex flex-wrap items-center justify-center gap-1.5 p-2 rounded-xl border-2 border-dashed border-stone-800 bg-black/20"></div>
         </div>
 
@@ -63,10 +64,10 @@
 
             <div class="flex gap-3">
                 <button onclick="clearTable()" class="flex-1 bg-stone-800 text-stone-400 py-5 rounded-2xl font-black tap-effect flex items-center justify-center gap-2 border-b-4 border-stone-950 text-xs uppercase italic">
-                    Sweep 🧹
+                    Limpar 🧹
                 </button>
                 <button id="btn-deliver" onclick="deliverOrder()" class="hidden flex-1 bg-green-600 text-white py-5 rounded-2xl font-black tap-effect flex items-center justify-center gap-2 border-b-4 border-green-900 text-xs uppercase italic">
-                    Serve 🥪
+                    Entregar 🥪
                 </button>
             </div>
         </main>
@@ -74,7 +75,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getDatabase, ref, set, onValue, update, get } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+        import { getDatabase, ref, set, onValue, update, get, runTransaction } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyCLYv-SkQEJyQ1m5rGzLXREOLdQobRm8Xg",
@@ -87,14 +88,26 @@
 
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
-        let roomRef, myRole, currentOrder = null, tableItems = [], wallet = 0;
+        let roomRef, myRole, currentOrder = null, tableItems = [], wallet = 0, lastOrderId = null;
+
+        const sfxClique = new Audio('clique.mp3');
+        const sfxLoop = new Audio('loop.mp3');
+        const sfxNovoPedido = new Audio('novopedido.mp3');
+        sfxLoop.loop = true;
+
+        document.addEventListener('click', () => {
+            if (document.getElementById('setup-screen').classList.contains('hidden')) {
+                sfxClique.currentTime = 0;
+                sfxClique.play().catch(() => {});
+            }
+        });
 
         const prices = { '🍞': 0.75, '🥩': 4.20, '🥚': 1.00, '🥓': 1.00, '🍅': 1.00, '🧀': 1.00, '🥬': 0.80, '🧅': 0.50, '🧄': 0.50, '🫑': 0.50, '🧃': 1.50, '🍹': 1.50, '🥤': 1.50, '🥃': 1.50, '🍺': 1.50, '🧋': 1.50, '🥛': 1.50, '🍵': 1.50 };
         const hostItems = ['🍞', '🧃', '🍹', '🥤', '🥃', '🍺', '🧋', '🥛', '🍵'];
         const guestItems = [
             { e: '🥩', t: 2000, a: '🔥' }, { e: '🥚', t: 2000, a: '🔥' }, { e: '🥓', t: 2000, a: '🔥' },
-            { e: '🍅', t: 1000, a: '🔪' }, { e: '🧅', t: 1000, a: '🔪' }, { e: '🧄', t: 1000, a: '🔪' },
-            { e: '🧀', t: 0 }, { e: '🥬', t: 0 }, { e: '🫑', t: 0 }
+            { e: '🍅', t: 1500, a: '🔪' }, { e: '🧅', t: 1500, a: '🔪' }, { e: '🧄', t: 1000, a: '🔪' },
+            { e: '🧀', t: 0 }, { e: '🥬', t: 0 }, { e: '🫑', t: 1000, a: '🔪' }
         ];
 
         window.showToast = (msg, type = 'info') => {
@@ -102,43 +115,52 @@
             const toast = document.createElement('div');
             const bg = type === 'success' ? 'bg-green-600' : type === 'error' ? 'bg-red-600' : 'bg-yellow-500';
             const text = type === 'success' || type === 'error' ? 'text-white' : 'text-black';
-            toast.className = `toast ${bg} ${text} px-6 py-3 rounded-full font-black text-xs uppercase tracking-tighter shadow-lg`;
+            toast.className = `toast ${bg} ${text} px-6 py-3 rounded-full font-black text-xs uppercase tracking-tighter shadow-lg z-[110]`;
             toast.innerText = msg;
             container.appendChild(toast);
             setTimeout(() => toast.remove(), 1000);
         };
 
         window.startSession = async (role) => {
-            const name = document.getElementById('room-name').value.trim().toLowerCase();
-            if (!name) return showToast("Digite o nome!", "error");
+            const name = document.getElementById('room-name').value.trim().toLowerCase().replace(/[^a-z0-9]/g, '');
+            if (!name) return showToast("Nome inválido!", "error");
             myRole = role;
-            roomRef = ref(db, 'rooms/' + name);
+            roomRef = ref(db, 'zen_rooms/' + name);
+            
             try {
                 if (role === 'host') {
-                    await set(roomRef, { wallet: 0, table: [], order: null, status: 'active' });
-                    showToast("Cozinha aberta!", "success");
+                    await set(roomRef, { wallet: 0, table: [], order: null });
                     enterGame();
                     generateOrder();
                 } else {
                     const snapshot = await get(roomRef);
-                    if (!snapshot.exists()) return showToast("Não encontrada!", "error");
-                    showToast("Conectado!", "success");
+                    if (!snapshot.exists()) return showToast("Sala não encontrada!", "error");
                     enterGame();
                 }
+
                 onValue(roomRef, (snapshot) => {
                     const data = snapshot.val();
                     if (data) {
-                        if (data.order) updateOrderUI(data.order);
-                        updateTableUI(data.table || []);
                         wallet = data.wallet || 0;
-                        document.getElementById('wallet').innerText = `R$ ${wallet.toFixed(2)}`;
+                        tableItems = data.table || [];
+                        currentOrder = data.order || null;
+                        
+                        if (currentOrder && currentOrder.id !== lastOrderId) {
+                            lastOrderId = currentOrder.id;
+                            sfxNovoPedido.currentTime = 0;
+                            sfxNovoPedido.play().catch(() => {});
+                        }
+                        
+                        renderState();
                     }
                 });
-            } catch (e) { showToast("Erro Firebase", "error"); }
+            } catch (e) { showToast("Erro de conexão", "error"); }
         };
 
         function enterGame() {
             document.getElementById('setup-screen').classList.add('hidden');
+            sfxLoop.play().catch(e => console.log("Áudio bloqueado pelo navegador"));
+            
             const b = document.getElementById('role-badge');
             b.innerText = myRole === 'host' ? 'DIRETOR' : 'CHEF';
             b.style.color = myRole === 'host' ? '#dc2626' : '#eab308';
@@ -151,17 +173,23 @@
             const ings = ['🥩', '🥚', '🥓', '🍅', '🧅', '🧄', '🧀', '🥬', '🫑'];
             const drinks = ['🧃', '🍹', '🥤', '🥃', '🍺', '🧋', '🥛', '🍵'];
             let items = ['🍞'];
-            let count = Math.random() < 0.25 ? 1 : Math.random() < 0.5 ? 2 : 4;
+            const rand = Math.random();
+            let count = rand < 0.25 ? 1 : rand < 0.50 ? 2 : 4;
             for(let i=0; i<count; i++) items.push(ings[Math.floor(Math.random() * ings.length)]);
             items.push('🍞');
-            const order = { items, drink: Math.random() < 0.25 ? drinks[Math.floor(Math.random() * drinks.length)] : null };
-            update(roomRef, { order: order });
+            const drink = Math.random() < 0.25 ? drinks[Math.floor(Math.random() * drinks.length)] : null;
+            update(roomRef, { order: { items, drink, id: Date.now() }, table: [] });
         }
 
-        function updateOrderUI(order) {
-            currentOrder = order;
-            document.getElementById('order-display').innerHTML = order.items.map(i => `<span>${i}</span>`).join('') + 
-                (order.drink ? `<span class="ml-2 pl-2 border-l border-red-500/50 text-yellow-500">${order.drink}</span>` : '');
+        function renderState() {
+            document.getElementById('wallet').innerText = `R$ ${wallet.toFixed(2)}`;
+            const orderBox = document.getElementById('order-display');
+            if (currentOrder) {
+                orderBox.innerHTML = currentOrder.items.map(i => `<span>${i}</span>`).join('') + 
+                    (currentOrder.drink ? `<span class="ml-2 pl-2 border-l border-red-500/50 text-yellow-500">${currentOrder.drink}</span>` : '');
+            }
+            const tableBox = document.getElementById('assembly-table');
+            tableBox.innerHTML = tableItems.map(i => `<span class="ingrediente-item text-3xl">${i}</span>`).join('');
         }
 
         function renderGrid() {
@@ -170,25 +198,27 @@
             const items = myRole === 'host' ? hostItems : guestItems;
             items.forEach(item => {
                 const btn = document.createElement('button');
-                btn.className = "bg-stone-900 border-b-2 border-black h-16 rounded-2xl text-3xl flex items-center justify-center tap-effect relative overflow-hidden";
+                btn.className = "bg-stone-900 border-b-4 border-black h-16 rounded-2xl text-3xl flex items-center justify-center tap-effect relative overflow-hidden";
                 const emoji = myRole === 'host' ? item : item.e;
-                btn.innerHTML = `<div class="p-bar absolute bottom-0 left-0 h-full bg-yellow-500/10 w-0"></div><span class="emoji-target z-10">${emoji}</span>`;
+                btn.innerHTML = `<div class="p-bar absolute bottom-0 left-0 h-full bg-white/10 w-0"></div><span class="emoji-target z-10">${emoji}</span>`;
                 btn.onclick = () => myRole === 'host' ? addToTable(item) : processItem(item, btn);
                 container.appendChild(btn);
             });
         }
 
         function processItem(item, btn) {
+            if (btn.disabled) return;
+            if (tableItems[0] !== '🍞') return showToast("Aguarde o pão!", "error");
+            if (tableItems.includes('🍞', 1)) return showToast("Lanche fechado!", "error");
             if (item.t === 0) return addToTable(item.e);
+            
             btn.disabled = true;
             const bar = btn.querySelector('.p-bar');
             const span = btn.querySelector('.emoji-target');
             const originalEmoji = item.e;
-            
             span.innerText = item.a;
             bar.style.transitionDuration = `${item.t}ms`;
             setTimeout(() => bar.style.width = '100%', 10);
-            
             setTimeout(() => {
                 addToTable(originalEmoji);
                 bar.style.transitionDuration = '0ms';
@@ -199,40 +229,62 @@
         }
 
         async function addToTable(item) {
-            tableItems.push(item);
-            await update(roomRef, { table: tableItems });
+            if (item === '🍞') {
+                if (tableItems.length === 0) { }
+                else if (tableItems[0] === '🍞' && !tableItems.includes('🍞', 1)) { }
+                else return showToast("Sequência inválida!", "error");
+            } else if (tableItems[0] !== '🍞') {
+                return showToast("Coloque o pão primeiro!", "error");
+            }
+
+            const tRef = ref(db, 'zen_rooms/' + roomRef.key + '/table');
+            await runTransaction(tRef, (currentTable) => {
+                const table = currentTable || [];
+                table.push(item);
+                return table;
+            });
         }
 
         window.clearTable = async () => {
+            if (tableItems.length === 0) return;
             let loss = 0;
             tableItems.forEach(i => loss += prices[i] || 0);
-            const newWallet = wallet - loss;
-            tableItems = [];
-            await update(roomRef, { wallet: newWallet, table: [] });
-            if (loss > 0) showToast(`Perda: R$ ${loss.toFixed(2)}`, "error");
-            else showToast("Mesa limpa", "info");
+            const tRef = ref(db, 'zen_rooms/' + roomRef.key);
+            await runTransaction(tRef, (data) => {
+                if (data) {
+                    data.wallet = (data.wallet || 0) - loss;
+                    data.table = [];
+                }
+                return data;
+            });
+            showToast(loss > 0 ? `Perda: R$ ${loss.toFixed(2)}` : "Mesa limpa", loss > 0 ? "error" : "info");
         };
 
-        function updateTableUI(items) {
-            tableItems = items;
-            const table = document.getElementById('assembly-table');
-            table.innerHTML = items.map(i => `<span class="ingrediente-item text-3xl">${i}</span>`).join('');
-        }
-
         window.deliverOrder = async () => {
-            if (!currentOrder) return;
+            if (!currentOrder || tableItems.length === 0) return;
+            if (tableItems[0] !== '🍞' || tableItems[tableItems.length - 1] !== '🍞' && !currentOrder.drink) return showToast("Feche o lanche!", "error");
+            
             const goal = [...currentOrder.items];
             if(currentOrder.drink) goal.push(currentOrder.drink);
             
-            if(JSON.stringify(goal.sort()) === JSON.stringify([...tableItems].sort())) {
+            const isMatch = JSON.stringify(goal.sort()) === JSON.stringify([...tableItems].sort());
+            
+            if(isMatch) {
                 let gain = 0;
                 tableItems.forEach(i => gain += prices[i] || 1.50);
-                const newWallet = wallet + gain;
-                await update(roomRef, { wallet: newWallet, table: [] });
+                const tRef = ref(db, 'zen_rooms/' + roomRef.key);
+                await runTransaction(tRef, (data) => {
+                    if (data) {
+                        data.wallet = (data.wallet || 0) + gain;
+                        data.table = [];
+                        data.order = null; 
+                    }
+                    return data;
+                });
                 showToast(`+ R$ ${gain.toFixed(2)}`, "success");
                 generateOrder();
             } else {
-                showToast("Receita Errada!", "error");
+                showToast("Receita Incorreta!", "error");
             }
         };
     </script>
