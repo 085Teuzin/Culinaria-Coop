@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Culinária Chaos - @085_Teuzinnn</title>
+    <title>Culinária Coop - @085_Teuzinnn</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body{background:#050505;touch-action:manipulation;overflow:hidden;height:100vh;display:flex;flex-direction:column}
@@ -73,16 +73,14 @@
         let roomRef, myRole, currentOrder = null, tableItems = [], wallet = 0, combo = 1, timerInt, gameStarted = false;
         
         const sfx = { 
-            click: new Audio('https://www.myinstants.com/media/sounds/button-20.mp3'), 
-            alert: new Audio('https://www.myinstants.com/media/sounds/ding-sound-effect_2.mp3'), 
-            money: new Audio('https://www.myinstants.com/media/sounds/cash-register-purchase.mp3'), 
-            error: new Audio('https://www.myinstants.com/media/sounds/buzzer_x.mp3') 
+            cook: new Audio('torrando.mp3'), 
+            cut: new Audio('cortando.mp3')
         };
 
         const prices = { '🍞': 2, '🧃': 5, '🍹': 7, '🥤': 5, '🥃': 8, '🍺': 6, '🧋': 7, '🥛': 4, '🍵': 4, '🥩': 12, '🥓': 10, '🥚': 7, '🍅': 5, '🧅': 5, '🫑': 4.5, '🧄': 4, '🧀': 6, '🥬': 3 };
         const drinks = ['🧃', '🍹', '🥤', '🥃', '🍺', '🧋', '🥛', '🍵'];
         const hostItems = ['🍞', ...drinks];
-        const guestItems = [ { e: '🥩', t: 3500, a: '🔥' }, { e: '🥚', t: 2000, a: '🔥' }, { e: '🥓', t: 2500, a: '🔥' }, { e: '🍅', t: 1500, a: '🔪' }, { e: '🧅', t: 1500, a: '🔪' }, { e: '🧄', t: 1200, a: '🔪' }, { e: '🧀', t: 1000, a: '🔪' }, { e: '🥬', t: 800, a: '🔪' }, { e: '🫑', t: 1200, a: '🔪' } ];
+        const guestItems = [ { e: '🥩', a: '🔥' }, { e: '🥚', a: '🔥' }, { e: '🥓', a: '🔥' }, { e: '🍅', a: '🔪' }, { e: '🧅', a: '🔪' }, { e: '🧄', a: '🔪' }, { e: '🧀', a: '🔪' }, { e: '🥬', a: '🔪' }, { e: '🫑', a: '🔪' } ];
 
         window.showToast = (msg, type = 'info') => {
             const container = document.getElementById('toast-container'), toast = document.createElement('div');
@@ -113,7 +111,7 @@
                     if (!gameStarted) startGame();
                     wallet = data.wallet; tableItems = data.table || []; combo = data.combo;
                     if (data.order && (!currentOrder || data.order.id !== currentOrder.id)) {
-                        currentOrder = data.order; sfx.alert.play(); startTimer(currentOrder.limit);
+                        currentOrder = data.order; startTimer(currentOrder.limit);
                     }
                     if (wallet <= 0) { alert("FALÊNCIA!"); location.reload(); }
                     renderState();
@@ -151,7 +149,6 @@
         }
 
         async function failOrder() {
-            sfx.error.play();
             await runTransaction(roomRef, (d) => { if (d) { d.wallet = Math.max(0, d.wallet - 35); d.combo = 1; d.order = null; d.table = []; } return d; });
             generateOrder();
         }
@@ -186,7 +183,7 @@
                 btn.className = "bg-stone-900 border-b-4 border-black h-[75px] rounded-xl text-3xl flex items-center justify-center tap-effect relative overflow-hidden active:translate-y-1";
                 const emoji = myRole === 'host' ? item : item.e;
                 btn.innerHTML = `<div class="p-bar absolute bottom-0 left-0 h-full bg-white/10 w-0"></div><span class="z-10">${emoji}</span>`;
-                btn.onclick = () => { sfx.click.play(); myRole === 'host' ? addToTable(item) : processItem(item, btn); };
+                btn.onclick = () => { myRole === 'host' ? addToTable(item) : processItem(item, btn); };
                 container.appendChild(btn);
             });
         }
@@ -194,10 +191,15 @@
         function processItem(item, btn) {
             if (btn.disabled || tableItems.length >= 8 || tableItems.length === 0 || tableItems.filter(i => i === '🍞').length >= 2) return;
             btn.disabled = true;
+            const isCook = item.a === '🔥';
+            const duration = isCook ? 3500 : 1500;
             const bar = btn.querySelector('.p-bar'), span = btn.querySelector('span'), orig = item.e;
-            span.innerText = item.a; bar.style.transitionDuration = `${item.t}ms`;
+            
+            if (isCook) sfx.cook.play(); else sfx.cut.play();
+            
+            span.innerText = item.a; bar.style.transitionDuration = `${duration}ms`;
             setTimeout(() => bar.style.width = '100%', 50);
-            setTimeout(() => { addToTable(orig); bar.style.transitionDuration = '0ms'; bar.style.width = '0'; span.innerText = orig; btn.disabled = false; }, item.t);
+            setTimeout(() => { addToTable(orig); bar.style.transitionDuration = '0ms'; bar.style.width = '0'; span.innerText = orig; btn.disabled = false; }, duration);
         }
 
         async function addToTable(item) {
@@ -216,7 +218,6 @@
 
         window.clearTable = async () => {
             if (tableItems.length === 0) return;
-            sfx.error.play();
             await runTransaction(roomRef, (d) => { if (d) { d.wallet = Math.max(0, d.wallet - (d.table.length * 3)); d.table = []; d.combo = 1; } return d; });
         };
 
@@ -228,12 +229,10 @@
             const isOk = tableItems[0] === '🍞' && tableItems.filter(x => x === '🍞').length === 2 && JSON.stringify(tFill) === JSON.stringify(oFill) && tDrink === currentOrder.drink;
             
             if (isOk) {
-                sfx.money.play();
                 const gain = tableItems.reduce((acc, i) => acc + (prices[i] || 0), 0) * combo;
                 await runTransaction(roomRef, (d) => { if (d) { d.wallet += gain; d.table = []; d.order = null; d.combo = Math.min(d.combo + 0.1, 3); } return d; });
                 generateOrder();
             } else {
-                sfx.error.play();
                 await runTransaction(roomRef, (d) => { if (d) { d.wallet = Math.max(0, d.wallet - 15); d.combo = 1; } return d; });
             }
         };
