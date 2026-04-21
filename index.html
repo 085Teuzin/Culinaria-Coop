@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Culinária Coop - @085_Teuzinnn</title>
+    <title>Culinaria Coop - Fixed</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body{background:#050505;touch-action:manipulation;overflow:hidden;height:100vh;display:flex;flex-direction:column}
@@ -12,26 +12,26 @@
         .panic-mode{animation:pulse-red 0.5s infinite}
         @keyframes pulse-red{0%{box-shadow:inset 0 0 40px rgba(220,38,38,0.3)}50%{box-shadow:inset 0 0 40px rgba(220,38,38,0.6)}100%{box-shadow:inset 0 0 40px rgba(220,38,38,0.3)}}
         #waiting-screen{backdrop-filter:blur(10px)}
+        .processing { pointer-events: none; opacity: 0.7; }
     </style>
 </head>
 <body class="text-stone-100 font-sans select-none">
     <div id="toast-container" class="fixed top-4 left-0 right-0 z-[100] flex flex-col items-center gap-2"></div>
     
     <div id="setup-screen" class="fixed inset-0 z-50 bg-[#0a0a0a] flex flex-col items-center justify-center p-6 text-center">
-        <div class="mb-8"><h1 class="text-5xl font-black text-red-700 italic tracking-tighter">CULINÁRIA CHAOS</h1><p class="text-red-500 text-[10px] font-black tracking-widest mt-1 uppercase">Made By: @085_Teuzinnn</p></div>
+        <div class="mb-8"><h1 class="text-5xl font-black text-red-700 italic tracking-tighter">Culinaria Coop</h1><p class="text-red-500 text-[10px] font-black tracking-widest mt-1">V2 - FIXED SYNC</p></div>
         <div class="space-y-4 w-full max-w-xs">
-            <input id="room-name" type="text" placeholder="ID DA COZINHA" class="w-full bg-stone-900 border-2 border-red-900/50 py-4 px-4 rounded-xl outline-none focus:border-red-600 text-center font-black text-white">
+            <input id="room-name" type="text" placeholder="NOME DA SALA" class="w-full bg-stone-900 border-2 border-red-900/50 py-4 px-4 rounded-xl outline-none focus:border-red-600 text-center font-black text-white">
             <div class="grid grid-cols-2 gap-3">
-                <button onclick="startSession('host')" class="bg-red-700 text-white py-4 rounded-xl font-black shadow-[0_4px_0_rgb(127,29,29)] tap-effect">HOST</button>
-                <button onclick="startSession('guest')" class="bg-stone-800 text-white py-4 rounded-xl font-black shadow-[0_4px_0_rgb(28,25,23)] tap-effect">JOIN</button>
+                <button onclick="startSession('host')" class="bg-red-700 text-white py-4 rounded-xl font-black shadow-[0_4px_0_rgb(127,29,29)] tap-effect">Criar</button>
+                <button onclick="startSession('guest')" class="bg-stone-800 text-white py-4 rounded-xl font-black shadow-[0_4px_0_rgb(28,25,23)] tap-effect">Entrar</button>
             </div>
         </div>
     </div>
 
     <div id="waiting-screen" class="hidden fixed inset-0 z-[60] bg-black/90 flex flex-col items-center justify-center p-6 text-center">
         <div class="w-12 h-12 border-4 border-red-600 border-t-transparent rounded-full animate-spin mb-4"></div>
-        <h2 class="text-xl font-black text-white italic">AGUARDANDO SEGUNDO CHEF...</h2>
-        <p class="text-stone-500 text-xs mt-2">O jogo começará automaticamente quando o parceiro entrar.</p>
+        <h2 class="text-xl font-black text-white italic">Aguardando parceiro...</h2>
     </div>
 
     <div id="game-ui" class="flex-1 flex flex-col max-w-md mx-auto w-full relative h-full">
@@ -52,13 +52,12 @@
             <div id="assembly-table" class="h-14 flex items-center justify-center gap-1 p-1 rounded-xl border-2 border-dashed border-red-900/20 bg-black/40"></div>
         </div>
 
-        <main class="flex-1 p-3 flex flex-col gap-2 overflow-hidden justify-center">
+        <main id="main-grid" class="flex-1 p-3 flex flex-col gap-2 overflow-hidden justify-center">
             <div id="grid-container" class="grid grid-cols-3 gap-2"></div>
             <div class="grid grid-cols-2 gap-2 mt-4">
-                <button onclick="clearTable()" class="bg-stone-800 text-stone-400 py-6 rounded-xl font-black tap-effect text-[12px] border-b-4 border-stone-950">LIXO 🗑️</button>
-                <button id="btn-deliver" onclick="deliverOrder()" class="hidden bg-green-700 text-white py-6 rounded-xl font-black tap-effect text-[12px] border-b-4 border-green-900">SERVIR ⚡</button>
+                <button onclick="clearTable()" class="bg-stone-800 text-stone-400 py-6 rounded-xl font-black tap-effect text-[12px] border-b-4 border-stone-950">Lixo 🗑️</button>
+                <button id="btn-deliver" onclick="deliverOrder()" class="bg-green-700 text-white py-6 rounded-xl font-black tap-effect text-[12px] border-b-4 border-green-900 opacity-30 pointer-events-none">Servir ⚡</button>
             </div>
-            <p class="text-center text-[10px] text-stone-600 mt-4">Made By: @085_Teuzinnn</p>
         </main>
     </div>
 
@@ -70,17 +69,17 @@
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
         
-        let roomRef, myRole, currentOrder = null, tableItems = [], wallet = 0, combo = 1, timerInt, gameStarted = false;
+        let roomRef, myRole, currentOrder = null, tableItems = [], wallet = 0, combo = 1, timerInt, gameStarted = false, isActionLocked = false;
         
-        const sfx = { 
-            cook: new Audio('torrando.mp3'), 
-            cut: new Audio('cortando.mp3')
-        };
-
         const prices = { '🍞': 2, '🧃': 5, '🍹': 7, '🥤': 5, '🥃': 8, '🍺': 6, '🧋': 7, '🥛': 4, '🍵': 4, '🥩': 12, '🥓': 10, '🥚': 7, '🍅': 5, '🧅': 5, '🫑': 4.5, '🧄': 4, '🧀': 6, '🥬': 3 };
         const drinks = ['🧃', '🍹', '🥤', '🥃', '🍺', '🧋', '🥛', '🍵'];
         const hostItems = ['🍞', ...drinks];
-        const guestItems = [ { e: '🥩', a: '🔥' }, { e: '🥚', a: '🔥' }, { e: '🥓', a: '🔥' }, { e: '🍅', a: '🔪' }, { e: '🧅', a: '🔪' }, { e: '🧄', a: '🔪' }, { e: '🧀', a: '🔪' }, { e: '🥬', a: '🔪' }, { e: '🫑', a: '🔪' } ];
+        const guestItems = [ { e: '🥩', a: '🔥', d: 3500 }, { e: '🥚', a: '🔥', d: 3500 }, { e: '🥓', a: '🔥', d: 3500 }, { e: '🍅', a: '🔪', d: 1500 }, { e: '🧅', a: '🔪', d: 1500 }, { e: '🧄', a: '🔪', d: 1500 }, { e: '🧀', a: '🔪', d: 1500 }, { e: '🥬', a: '🔪', d: 1500 }, { e: '🫑', a: '🔪', d: 1500 } ];
+
+        function playSfx(type) {
+            const audio = new Audio(type === '🔥' ? 'torrando.mp3' : 'cortando.mp3');
+            audio.play().catch(()=>{});
+        }
 
         window.showToast = (msg, type = 'info') => {
             const container = document.getElementById('toast-container'), toast = document.createElement('div');
@@ -94,7 +93,7 @@
             myRole = role; roomRef = ref(db, 'hard_rooms/' + name);
             
             if (role === 'host') {
-                await set(roomRef, { wallet: 100, table: [], order: null, combo: 1, hostPresent: true, guestPresent: false });
+                await set(roomRef, { wallet: 100, table: [], order: null, combo: 1, hostPresent: true, guestPresent: false, lastAction: Date.now() });
                 onDisconnect(ref(db, `hard_rooms/${name}/hostPresent`)).set(false);
             } else {
                 const s = await get(roomRef);
@@ -106,19 +105,19 @@
             onValue(roomRef, (snapshot) => {
                 const data = snapshot.val();
                 if (!data) return;
-                
                 if (data.hostPresent && data.guestPresent) {
                     if (!gameStarted) startGame();
                     wallet = data.wallet; tableItems = data.table || []; combo = data.combo;
                     if (data.order && (!currentOrder || data.order.id !== currentOrder.id)) {
                         currentOrder = data.order; startTimer(currentOrder.limit);
+                    } else if (!data.order) {
+                        currentOrder = null; clearInterval(timerInt);
                     }
                     if (wallet <= 0) { alert("FALÊNCIA!"); location.reload(); }
                     renderState();
                 } else {
                     document.getElementById('waiting-screen').classList.remove('hidden');
-                    gameStarted = false;
-                    clearInterval(timerInt);
+                    gameStarted = false; clearInterval(timerInt);
                 }
             });
         };
@@ -127,10 +126,7 @@
             gameStarted = true;
             document.getElementById('setup-screen').classList.add('hidden');
             document.getElementById('waiting-screen').classList.add('hidden');
-            if(myRole === 'host') {
-                document.getElementById('btn-deliver').classList.remove('hidden');
-                generateOrder();
-            }
+            if(myRole === 'host') generateOrder();
             renderGrid();
         }
 
@@ -138,7 +134,7 @@
             clearInterval(timerInt);
             timerInt = setInterval(() => {
                 const diff = limit - Date.now();
-                if (diff <= 0) { clearInterval(timerInt); if(myRole === 'host') failOrder(); }
+                if (diff <= 0) { clearInterval(timerInt); if(myRole === 'host') failOrder("TEMPO ESGOTADO"); }
                 else {
                     const sec = Math.ceil(diff / 1000);
                     document.getElementById('timer-display').innerText = `00:${sec < 10 ? '0'+sec : sec}`;
@@ -148,19 +144,20 @@
             }, 200);
         }
 
-        async function failOrder() {
+        async function failOrder(reason) {
             await runTransaction(roomRef, (d) => { if (d) { d.wallet = Math.max(0, d.wallet - 35); d.combo = 1; d.order = null; d.table = []; } return d; });
+            showToast(reason, "error");
             generateOrder();
         }
 
         function generateOrder() {
             const ings = ['🥩', '🥚', '🥓', '🍅', '🧅', '🧄', '🧀', '🥬', '🫑'];
             let items = ['🍞'];
-            const count = Math.floor(Math.random() * 3) + 2;
+            const count = Math.floor(Math.random() * 2) + 2;
             for(let i=0; i<count; i++) items.push(ings[Math.floor(Math.random() * ings.length)]);
             items.push('🍞');
-            const drink = Math.random() < 0.4 ? drinks[Math.floor(Math.random() * drinks.length)] : null;
-            update(roomRef, { order: { items, drink, id: Date.now(), limit: Date.now() + 22000 }, table: [] });
+            const drink = Math.random() < 0.5 ? drinks[Math.floor(Math.random() * drinks.length)] : null;
+            update(roomRef, { order: { items, drink, id: Date.now(), limit: Date.now() + 25000 }, table: [] });
         }
 
         function renderState() {
@@ -171,8 +168,15 @@
                 let html = currentOrder.items.map(i => `<span>${i}</span>`).join('');
                 if(currentOrder.drink) html += `<span class="ml-2 border-l border-red-500 pl-2 text-yellow-400">${currentOrder.drink}</span>`;
                 orderBox.innerHTML = html;
-            }
+            } else { orderBox.innerHTML = ''; }
             document.getElementById('assembly-table').innerHTML = tableItems.map(i => `<span class="text-3xl">${i}</span>`).join('');
+            
+            const btnDeliver = document.getElementById('btn-deliver');
+            if (myRole === 'host' && tableItems.length >= 2) {
+                btnDeliver.classList.remove('opacity-30', 'pointer-events-none');
+            } else {
+                btnDeliver.classList.add('opacity-30', 'pointer-events-none');
+            }
         }
 
         function renderGrid() {
@@ -188,52 +192,95 @@
             });
         }
 
-        function processItem(item, btn) {
-            if (btn.disabled || tableItems.length >= 8 || tableItems.length === 0 || tableItems.filter(i => i === '🍞').length >= 2) return;
-            btn.disabled = true;
-            const isCook = item.a === '🔥';
-            const duration = isCook ? 3500 : 1500;
-            const bar = btn.querySelector('.p-bar'), span = btn.querySelector('span'), orig = item.e;
+        async function processItem(item, btn) {
+            if (isActionLocked || tableItems.length >= 8) return;
+            isActionLocked = true;
+            document.getElementById('main-grid').classList.add('processing');
             
-            if (isCook) sfx.cook.play(); else sfx.cut.play();
+            const bar = btn.querySelector('.p-bar'), span = btn.querySelector('span');
+            playSfx(item.a);
+            span.innerText = item.a;
+            bar.style.transitionDuration = `${item.d}ms`;
             
-            span.innerText = item.a; bar.style.transitionDuration = `${duration}ms`;
             setTimeout(() => bar.style.width = '100%', 50);
-            setTimeout(() => { addToTable(orig); bar.style.transitionDuration = '0ms'; bar.style.width = '0'; span.innerText = orig; btn.disabled = false; }, duration);
+            
+            setTimeout(async () => {
+                await addToTable(item.e);
+                bar.style.transitionDuration = '0ms'; bar.style.width = '0';
+                span.innerText = item.e;
+                isActionLocked = false;
+                document.getElementById('main-grid').classList.remove('processing');
+            }, item.d);
         }
 
         async function addToTable(item) {
-            if (tableItems.length >= 8) return;
             await runTransaction(ref(db, `hard_rooms/${roomRef.key}/table`), (t) => {
                 t = t || [];
                 if (t.length >= 8) return t;
                 const breads = t.filter(x => x === '🍞').length;
-                if (myRole === 'host') {
-                    if (item === '🍞' && (t.length !== 0 && (breads !== 1 || t.length < 2))) return t;
-                    if (drinks.includes(item) && (breads < 2 || t.some(x => drinks.includes(x)))) return t;
+                if (item === '🍞') {
+                    if (t.length === 0) { t.push(item); return t; }
+                    if (breads === 1 && t.length >= 2) { t.push(item); return t; }
+                    return t;
                 }
-                t.push(item); return t;
+                if (drinks.includes(item)) {
+                    if (breads === 2 && !t.some(x => drinks.includes(x))) { t.push(item); return t; }
+                    return t;
+                }
+                if (breads === 1 && t.filter(x => x === '🍞')[0] === t[0]) {
+                    t.push(item); return t;
+                }
+                return t;
             });
         }
 
         window.clearTable = async () => {
             if (tableItems.length === 0) return;
-            await runTransaction(roomRef, (d) => { if (d) { d.wallet = Math.max(0, d.wallet - (d.table.length * 3)); d.table = []; d.combo = 1; } return d; });
+            await runTransaction(roomRef, (d) => { 
+                if (d) { 
+                    d.wallet = Math.max(0, d.wallet - (d.table.length * 2)); 
+                    d.table = []; d.combo = 1; 
+                } 
+                return d; 
+            });
+            showToast("MESA LIMPA", "error");
         };
 
         window.deliverOrder = async () => {
-            if (!currentOrder || tableItems.length < 2) return;
+            if (!currentOrder || isActionLocked) return;
+            
             const tFill = tableItems.filter(i => i !== '🍞' && !drinks.includes(i)).sort();
             const oFill = currentOrder.items.filter(i => i !== '🍞').sort();
-            const tDrink = tableItems.filter(i => drinks.includes(i))[0] || null;
-            const isOk = tableItems[0] === '🍞' && tableItems.filter(x => x === '🍞').length === 2 && JSON.stringify(tFill) === JSON.stringify(oFill) && tDrink === currentOrder.drink;
+            const tDrink = tableItems.find(i => drinks.includes(i)) || null;
+            
+            const isOk = tableItems[0] === '🍞' && 
+                         tableItems[tableItems.length - (tDrink ? 2 : 1)] === '🍞' && 
+                         JSON.stringify(tFill) === JSON.stringify(oFill) && 
+                         tDrink === currentOrder.drink;
             
             if (isOk) {
-                const gain = tableItems.reduce((acc, i) => acc + (prices[i] || 0), 0) * combo;
-                await runTransaction(roomRef, (d) => { if (d) { d.wallet += gain; d.table = []; d.order = null; d.combo = Math.min(d.combo + 0.1, 3); } return d; });
+                const baseGain = tableItems.reduce((acc, i) => acc + (prices[i] || 0), 0);
+                const totalGain = baseGain * combo;
+                await runTransaction(roomRef, (d) => {
+                    if (d) {
+                        d.wallet += totalGain;
+                        d.table = [];
+                        d.order = null;
+                        d.combo = Math.min(d.combo + 0.2, 3.0);
+                    }
+                    return d;
+                });
+                showToast(`+ R$ ${totalGain.toFixed(2)}`, "success");
                 generateOrder();
             } else {
-                await runTransaction(roomRef, (d) => { if (d) { d.wallet = Math.max(0, d.wallet - 15); d.combo = 1; } return d; });
+                await runTransaction(roomRef, (d) => {
+                    if (d) {
+                        d.wallet = Math.max(0, d.wallet - 20);
+                        d.combo = 1;
+                    }
+                    return d;
+                });
+                showToast("RECEITA ERRADA", "error");
             }
         };
     </script>
